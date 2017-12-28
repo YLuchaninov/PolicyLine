@@ -6,10 +6,10 @@ let ABAC = require('../dist/');
 let Policy = ABAC.Policy;
 let DI = ABAC.DI;
 
-// disable errors notifications in console
+// disable errors notifications in console by singleton settings
 ABAC.settings.log = false;
 
-describe("Function Dependency Injection", function () {
+describe("Dependency Injection", function () {
      it(": register by name", function () {
         DI.register('$test', function (value) {
             return 'test_' + value;
@@ -39,6 +39,27 @@ describe("Function Dependency Injection", function () {
         let rules = {
             target: [
                 "user.name=$test('Joe')"
+            ],
+            effect: "permit",
+            algorithm: "all"
+        };
+
+        let policy = new Policy(rules);
+        let user = {name: 'test_Joe'};
+
+        expect(policy.check(user)).to.equal(true);
+    });
+
+    it(": right site injection", function () {
+        function $test(value) {
+            return 'test_' + value;
+        }
+
+        DI.register($test);
+
+        let rules = {
+            target: [
+                "$test('Joe')=user.name"
             ],
             effect: "permit",
             algorithm: "all"
