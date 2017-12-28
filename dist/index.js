@@ -117,7 +117,7 @@ function parseRule(rule) {
                     var key = _step.value;
 
                     if (rule.includes(key)) {
-                        di += key + '=' + namespace + '.' + key + ';';
+                        di += 'var ' + key + '=' + namespace + '.' + key + ';';
                     }
                 }
             } catch (err) {
@@ -137,7 +137,7 @@ function parseRule(rule) {
         }
 
         // create returning function
-        return new Function('user', 'action', 'env', 'resource', 'var _a;' + di + 'try{_a=!!(' + rule + ');}catch(_e){_a=_e};return _a');
+        return new Function('user', 'action', 'env', 'resource', 'var _a;' + di + 'try{_a=!!(' + rule + ');}catch(_e){_a=_e};return _a;');
     } catch (e) {
         return new Function('return new Error("in access rule: ' + rule + '");');
     }

@@ -10,65 +10,6 @@ let DI = ABAC.DI;
 ABAC.settings.log = false;
 
 describe("Function Dependency Injection", function () {
-    // it(": injection fail", function () {
-    //     let rules = {
-    //         target: [
-    //             "user.name=$test('Joe')"
-    //         ],
-    //         effect: "permit",
-    //         algorithm: "all"
-    //     };
-    //
-    //     let policy = new Policy(rules);
-    //     let user = {name: 'test_Joe'};
-    //
-    //     expect(policy.check(user)).to.equal(false);
-    // });
-    //
-    // it(": clear", function () {
-    //     function $test(value) {
-    //         return 'test_' + value;
-    //     }
-    //
-    //     DI.register($test);
-    //     DI.clear();
-    //
-    //     let rules = {
-    //         target: [
-    //             "user.name=$test('Joe')"
-    //         ],
-    //         effect: "permit",
-    //         algorithm: "all"
-    //     };
-    //
-    //     let policy = new Policy(rules);
-    //     let user = {name: 'test_Joe'};
-    //
-    //     expect(policy.check(user)).to.equal(false);
-    // });
-    //
-    // it(": unregister pure function", function () {
-    //     function $test(value) {
-    //         return 'test_' + value;
-    //     }
-    //
-    //     DI.register($test);
-    //     DI.unregister($test);
-    //
-    //     let rules = {
-    //         target: [
-    //             "user.name=$test('Joe')"
-    //         ],
-    //         effect: "permit",
-    //         algorithm: "all"
-    //     };
-    //
-    //     let policy = new Policy(rules);
-    //     let user = {name: 'test_Joe'};
-    //
-    //     expect(policy.check(user)).to.equal(false);
-    // });
-
      it(": register by name", function () {
         DI.register('$test', function (value) {
             return 'test_' + value;
@@ -82,16 +23,90 @@ describe("Function Dependency Injection", function () {
             algorithm: "all"
         };
 
-        //let policy = new Policy(rules);
+        let policy = new Policy(rules);
         let user = {name: 'test_Joe'};
 
+        expect(policy.check(user)).to.equal(true);
+    });
 
-        //todo expect(policy.check(user)).to.equal(true);
+    it(": register pure function", function () {
+        function $test(value) {
+            return 'test_' + value;
+        }
 
-        let rule = Policy.parseRule(rules.target[0]);
-        //console.log(rule(user));
+        DI.register($test);
 
-        expect(true).to.equal(true);
+        let rules = {
+            target: [
+                "user.name=$test('Joe')"
+            ],
+            effect: "permit",
+            algorithm: "all"
+        };
+
+        let policy = new Policy(rules);
+        let user = {name: 'test_Joe'};
+
+        expect(policy.check(user)).to.equal(true);
+    });
+
+    it(": injection fail", function () {
+        let rules = {
+            target: [
+                "user.name=$test('Joe')"
+            ],
+            effect: "permit",
+            algorithm: "all"
+        };
+
+        let policy = new Policy(rules);
+        let user = {name: 'test_Joe'};
+
+        expect(policy.check(user)).to.equal(false);
+    });
+
+    it(": clear", function () {
+        function $test(value) {
+            return 'test_' + value;
+        }
+
+        DI.register($test);
+        DI.clear();
+
+        let rules = {
+            target: [
+                "user.name=$test('Joe')"
+            ],
+            effect: "permit",
+            algorithm: "all"
+        };
+
+        let policy = new Policy(rules);
+        let user = {name: 'test_Joe'};
+
+        expect(policy.check(user)).to.equal(false);
+    });
+
+    it(": unregister pure function", function () {
+        function $test(value) {
+            return 'test_' + value;
+        }
+
+        DI.register($test);
+        DI.unregister($test);
+
+        let rules = {
+            target: [
+                "user.name=$test('Joe')"
+            ],
+            effect: "permit",
+            algorithm: "all"
+        };
+
+        let policy = new Policy(rules);
+        let user = {name: 'test_Joe'};
+
+        expect(policy.check(user)).to.equal(false);
     });
 
    it(": unregister by name", function () {
@@ -115,27 +130,6 @@ describe("Function Dependency Injection", function () {
 
         expect(policy.check(user)).to.equal(false);
     });
-
-    // it(": register pure function", function () {
-    //     function $test(value) {
-    //         return 'test_' + value;
-    //     }
-    //
-    //     DI.register($test);
-    //
-    //     let rules = {
-    //         target: [
-    //             "user.name=$test('Joe')"
-    //         ],
-    //         effect: "permit",
-    //         algorithm: "all"
-    //     };
-    //
-    //     let policy = new Policy(rules);
-    //     let user = {name: 'test_Joe'};
-    //
-    //     expect(policy.check(user)).to.equal(true);
-    // });
 
     afterEach(function () {
         DI.clear();

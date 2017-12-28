@@ -18,14 +18,14 @@ function parseRule(rule) {
         if (global[namespace] !== undefined) {
             for (const key of Object.keys(global[namespace])) {
                 if (rule.includes(key)) {
-                    di += key + '=' + namespace + '.' + key + ';';
+                    di +='var '+ key + '=' + namespace + '.' + key + ';';
                 }
             }
         }
 
         // create returning function
         return new Function('user', 'action', 'env', 'resource',
-            'var _a;' + di + 'try{_a=!!(' + rule + ');}catch(_e){_a=_e};return _a');
+            'var _a;' + di + 'try{_a=!!(' + rule + ');}catch(_e){_a=_e};return _a;');
     } catch (e) {
         return new Function('return new Error("in access rule: ' + rule + '");');
     }
