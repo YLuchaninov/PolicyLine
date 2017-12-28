@@ -92,8 +92,12 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 var namespace = 'abac_di';
 
+var settings = {
+    log: true
+};
+
 function parseRule(rule) {
-    var ruleReg = /([^<>=]+)\s?([<>=!]{1,2})\s?(.+)/; //todo change regexp for $fnName as a start part of expression
+    var ruleReg = /([^<>=]+)\s?([<>=!]{1,2})\s?(.+)/;
     try {
         var ruleArray = ruleReg.exec(rule).slice(1, 4);
         if (ruleArray[1] === '=' || ruleArray[1] === '==') {
@@ -139,17 +143,29 @@ function parseRule(rule) {
     }
 }
 
-function registerFunction(name, fn) {
-    if (global[namespace] === undefined) {
-        global[namespace] = {};
+var DI = {
+    register: function register(name, fn) {
+        if (global[namespace] === undefined) {
+            global[namespace] = {};
+        }
+
+        if (typeof name === 'function') {
+            global[namespace][name.name] = name;
+        } else {
+            global[namespace][name] = fn;
+        }
+    },
+    unregister: function unregister(name) {
+        if (global[namespace] === undefined) {
+            return;
+        }
+
+        delete global[namespace][typeof name === 'function' ? name.name : name];
+    },
+    clear: function clear() {
+        delete global[namespace];
     }
-
-    global[namespace][name] = fn;
-}
-
-function cleanRegistration() {
-    global[namespace] = undefined;
-}
+};
 
 function createTargetPolicy(target) {
     var algorithm = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'all';
@@ -168,7 +184,9 @@ function createTargetPolicy(target) {
 
             // any case with errors to deny of whole policy
             if ((typeof ruleResult === 'undefined' ? 'undefined' : _typeof(ruleResult)) === 'object') {
-                console.error(ruleResult);
+                if (settings.log) {
+                    console.error(ruleResult);
+                }
                 return false;
             }
 
@@ -185,12 +203,7 @@ var Policy = function () {
         _classCallCheck(this, Policy);
 
         if (policy === undefined && effect === undefined) {
-            // create new policy
-            var target = origin.target,
-                algorithm = origin.algorithm,
-                _effect = origin.effect;
-
-            this.check = createTargetPolicy(target, algorithm, _effect);
+            this.check = createTargetPolicy(origin.target, origin.algorithm, origin.effect);
         } else {
             // create new policy from two 'check' methods & operation
             this.check = function (user, action, env, resource) {
@@ -217,11 +230,15 @@ var Policy = function () {
     return Policy;
 }();
 
-exports.createTargetPolicy = createTargetPolicy;
+// static methods
+
+
+Policy.createTargetPolicy = createTargetPolicy;
+Policy.parseRule = parseRule;
+
 exports.Policy = Policy;
-exports.parseRule = parseRule;
-exports.registerFunction = registerFunction;
-exports.cleanRegistration = cleanRegistration;
+exports.DI = DI;
+exports.settings = settings;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1)))
 
 /***/ }),

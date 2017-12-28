@@ -1,10 +1,11 @@
-var expect = require('chai').expect;
-var should = require("chai").should;
-var Policy = require('../dist/').Policy;
+"use strict";
+
+let expect = require('chai').expect;
+let Policy = require('../dist/').Policy;
 
 // user, action, env, resource
-describe("Parsing Policies", function () {
-    it("parsing policies: base functional, ==, pure object", function () {
+describe("Parsing", function () {
+    it(": base functional, ==, pure object", function () {
         let rules = {
             target: [
                 "user=='Joe'"
@@ -19,7 +20,7 @@ describe("Parsing Policies", function () {
         expect(policy.check(user)).to.equal(true);
     });
 
-    it("parsing policies: object attributes", function () {
+    it(": object attributes", function () {
         let rules = {
             target: [
                 "user.name='Joe'"
@@ -29,12 +30,12 @@ describe("Parsing Policies", function () {
         };
 
         let policy = new Policy(rules);
-        let user = {name:'Joe'};
+        let user = {name: 'Joe'};
 
         expect(policy.check(user)).to.equal(true);
     });
 
-    it("parsing policies: inner objects", function () {
+    it(": inner objects", function () {
         let rules = {
             target: [
                 "user.group.location='NY'"
@@ -49,7 +50,7 @@ describe("Parsing Policies", function () {
         expect(policy.check(user)).to.equal(true);
     });
 
-    it("parsing policies: =", function () {
+    it(": =", function () {
         let rules = {
             target: [
                 "user='Joe'"
@@ -64,7 +65,7 @@ describe("Parsing Policies", function () {
         expect(policy.check(user)).to.equal(true);
     });
 
-    it("parsing policies: >=", function () {
+    it(": >=", function () {
         let rules = {
             target: [
                 "user.value>=3000"
@@ -74,12 +75,12 @@ describe("Parsing Policies", function () {
         };
 
         let policy = new Policy(rules);
-        let user = {value:4000};
+        let user = {value: 4000};
 
         expect(policy.check(user)).to.equal(true);
     });
 
-    it("parsing policies: <=", function () {
+    it(": <=", function () {
         let rules = {
             target: [
                 "user.value<=3000"
@@ -89,12 +90,12 @@ describe("Parsing Policies", function () {
         };
 
         let policy = new Policy(rules);
-        let user = {value:2000};
+        let user = {value: 2000};
 
         expect(policy.check(user)).to.equal(true);
     });
 
-    it("parsing policies: !=", function () {
+    it(": !=", function () {
         let rules = {
             target: [
                 "user.value<=3000"
@@ -104,12 +105,12 @@ describe("Parsing Policies", function () {
         };
 
         let policy = new Policy(rules);
-        let user = {value:2000};
+        let user = {value: 2000};
 
         expect(policy.check(user)).to.equal(true);
     });
 
-    it("parsing policies: right expression", function () {
+    it(": right expression", function () {
         let rules = {
             target: [
                 "user.value<=(3000-2000)*env.value"
@@ -119,13 +120,13 @@ describe("Parsing Policies", function () {
         };
 
         let policy = new Policy(rules);
-        let user = {value:100};
-        let env = {value:10};
+        let user = {value: 100};
+        let env = {value: 10};
 
         expect(policy.check(user, null, env)).to.equal(true);
     });
 
-    it("parsing policies: left expression", function () {
+    it(": left expression", function () {
         let rules = {
             target: [
                 "(3000-2000)*env.value>=user.value"
@@ -135,9 +136,26 @@ describe("Parsing Policies", function () {
         };
 
         let policy = new Policy(rules);
-        let user = {value:100};
-        let env = {value:10};
+        let user = {value: 100};
+        let env = {value: 10};
 
         expect(policy.check(user, null, env)).to.equal(true);
     });
+
+    it(": exception handling", function () {
+        let rules = {
+            target: [
+                "(3000-2000)*env.valueuser.value"
+            ],
+            effect: "permit",
+            algorithm: "all"
+        };
+
+        let policy = new Policy(rules);
+        let user = {value: 100};
+        let env = {value: 10};
+
+        expect(policy.check(user, null, env)).to.equal(false);
+    });
 });
+

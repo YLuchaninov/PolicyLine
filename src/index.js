@@ -1,7 +1,11 @@
 const namespace = 'abac_di';
 
+const settings = {
+    log: true
+};
+
 function parseRule(rule) {
-    let ruleReg = /([^<>=]+)\s?([<>=!]{1,2})\s?(.+)/; //todo change regexp for $fnName as a start part of expression
+    let ruleReg = /([^<>=]+)\s?([<>=!]{1,2})\s?(.+)/;
     try {
         let ruleArray = ruleReg.exec(rule).slice(1, 4);
         if (ruleArray[1] === '=' || ruleArray[1] === '==') {
@@ -27,17 +31,31 @@ function parseRule(rule) {
     }
 }
 
-function registerFunction(name, fn) {
-    if (global[namespace] === undefined) {
-        global[namespace] = {};
+let DI = {
+    register(name, fn) {
+        if (global[namespace] === undefined) {
+            global[namespace] = {};
+        }
+
+        if (typeof name === 'function') {
+            global[namespace][name.name] = name;
+        } else {
+            global[namespace][name] = fn;
+        }
+    },
+
+    unregister(name) {
+        if (global[namespace] === undefined) {
+            return;
+        }
+
+        delete global[namespace][(typeof name === 'function') ? name.name : name];
+    },
+
+    clear() {
+        delete global[namespace];
     }
-
-    global[namespace][name] = fn;
-}
-
-function cleanRegistration() {
-    global[namespace] = undefined;
-}
+};
 
 function createTargetPolicy(target, algorithm = 'all', effect = 'deny') {
     let rules = [];
@@ -53,7 +71,9 @@ function createTargetPolicy(target, algorithm = 'all', effect = 'deny') {
 
             // any case with errors to deny of whole policy
             if (typeof ruleResult === 'object') {
-                console.error(ruleResult);
+                if (settings.log) {
+                    console.error(ruleResult);
+                }
                 return false;
             }
 
@@ -68,9 +88,7 @@ function createTargetPolicy(target, algorithm = 'all', effect = 'deny') {
 class Policy {
     constructor(origin, policy, effect) {
         if (policy === undefined && effect === undefined) {
-            // create new policy
-            let {target, algorithm, effect} = origin;
-            this.check = createTargetPolicy(target, algorithm, effect);
+            this.check = createTargetPolicy(origin.target, origin.algorithm, origin.effect);
         } else {
             // create new policy from two 'check' methods & operation
             this.check = function (user, action, env, resource) { // todo refactor for avoid of closer
@@ -90,10 +108,12 @@ class Policy {
     }
 }
 
+// static methods
+Policy.createTargetPolicy = createTargetPolicy;
+Policy.parseRule = parseRule;
+
 export {
-    createTargetPolicy,
     Policy,
-    parseRule,
-    registerFunction,
-    cleanRegistration
+    DI,
+    settings
 }
