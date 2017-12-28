@@ -93,7 +93,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var namespace = 'abac_di';
 
 function parseRule(rule) {
-    var ruleReg = /([\d\w\.]+)\s?([<>=!]{1,2})\s?(.+)/; //todo change regexp for $fnName as a start part of expression
+    var ruleReg = /([^<>=]+)\s?([<>=!]{1,2})\s?(.+)/; //todo change regexp for $fnName as a start part of expression
     try {
         var ruleArray = ruleReg.exec(rule).slice(1, 4);
         if (ruleArray[1] === '=' || ruleArray[1] === '==') {
@@ -194,7 +194,7 @@ var Policy = function () {
         } else {
             // create new policy from two 'check' methods & operation
             this.check = function (user, action, env, resource) {
-                // todo refactor
+                // todo refactor for avoid of closer
                 var a = origin(user, action, env, resource);
                 var b = policy(user, action, env, resource);
                 return effect === '||' ? a || b : a && b;

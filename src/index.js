@@ -1,7 +1,7 @@
 const namespace = 'abac_di';
 
 function parseRule(rule) {
-    let ruleReg = /([\d\w\.]+)\s?([<>=!]{1,2})\s?(.+)/; //todo change regexp for $fnName as a start part of expression
+    let ruleReg = /([^<>=]+)\s?([<>=!]{1,2})\s?(.+)/; //todo change regexp for $fnName as a start part of expression
     try {
         let ruleArray = ruleReg.exec(rule).slice(1, 4);
         if (ruleArray[1] === '=' || ruleArray[1] === '==') {
