@@ -167,18 +167,20 @@ var DI = {
     }
 };
 
+// todo refactoring
 function createTargetPolicy(target) {
     var algorithm = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'all';
     var effect = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'deny';
 
+    var flag = !(algorithm === 'any');
     var rules = [];
     for (var i = 0; i < target.length; i++) {
         rules[i] = parseRule(target[i]);
     }
 
     return function (user, action, env, resource) {
-        var flag = !(algorithm === 'any');
         var result = flag;
+
         for (var _i = 0; _i < target.length; _i++) {
             var ruleResult = rules[_i](user, action, env, resource);
 
@@ -202,28 +204,61 @@ var Policy = function () {
     function Policy(origin, policy, effect) {
         _classCallCheck(this, Policy);
 
+        this._expression = '';
+        this._policies = {};
+
+        // constructor part
         if (policy === undefined && effect === undefined) {
-            this.check = createTargetPolicy(origin.target, origin.algorithm, origin.effect);
+            var uniqID = '_' + Math.random().toString(36).substr(2, 9);
+            this._expression += 'data.' + uniqID;
+            this._policies[uniqID] = createTargetPolicy(origin.target, origin.algorithm, origin.effect);
         } else {
-            // create new policy from two 'check' methods & operation
-            this.check = function (user, action, env, resource) {
-                // todo refactor for avoid of closer
-                var a = origin(user, action, env, resource);
-                var b = policy(user, action, env, resource);
-                return effect === '||' ? a || b : a && b;
-            };
+            // create new policy from existing two
+            this._expression = origin._expression + effect + policy._expression;
+            Object.assign(this._policies, origin._policies, policy._policies);
         }
     }
 
     _createClass(Policy, [{
+        key: 'check',
+        value: function check(user, action, env, resource) {
+            var result = {};
+            var _iteratorNormalCompletion2 = true;
+            var _didIteratorError2 = false;
+            var _iteratorError2 = undefined;
+
+            try {
+                for (var _iterator2 = Object.keys(this._policies)[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                    var key = _step2.value;
+
+                    result[key] = this._policies[key](user, action, env, resource);
+                }
+            } catch (err) {
+                _didIteratorError2 = true;
+                _iteratorError2 = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                        _iterator2.return();
+                    }
+                } finally {
+                    if (_didIteratorError2) {
+                        throw _iteratorError2;
+                    }
+                }
+            }
+
+            return new Function('data', 'return ' + this._expression + ';')(result);
+        }
+    }, {
         key: 'and',
         value: function and(policy) {
-            return new Policy(this.check, policy.check, '&&');
+            return new Policy(this, policy, '&&');
         }
     }, {
         key: 'or',
         value: function or(policy) {
-            return new Policy(this.check, policy.check, '||');
+            return new Policy(this, policy, '||');
         }
     }]);
 

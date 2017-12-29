@@ -18,7 +18,7 @@ function parseRule(rule) {
         if (global[namespace] !== undefined) {
             for (const key of Object.keys(global[namespace])) {
                 if (rule.includes(key)) {
-                    di +='var '+ key + '=' + namespace + '.' + key + ';';
+                    di += 'var ' + key + '=' + namespace + '.' + key + ';';
                 }
             }
         }
@@ -57,15 +57,17 @@ let DI = {
     }
 };
 
+// todo refactoring
 function createTargetPolicy(target, algorithm = 'all', effect = 'deny') {
+    let flag = !(algorithm === 'any');
     let rules = [];
     for (let i = 0; i < target.length; i++) {
         rules[i] = parseRule(target[i]);
     }
 
     return function (user, action, env, resource) {
-        let flag = !(algorithm === 'any');
         let result = flag;
+
         for (let i = 0; i < target.length; i++) {
             let ruleResult = rules[i](user, action, env, resource);
 
@@ -87,24 +89,36 @@ function createTargetPolicy(target, algorithm = 'all', effect = 'deny') {
 
 class Policy {
     constructor(origin, policy, effect) {
+        this._expression = '';
+        this._policies = {};
+
+        // constructor part
         if (policy === undefined && effect === undefined) {
-            this.check = createTargetPolicy(origin.target, origin.algorithm, origin.effect);
+            let uniqID = '_' + Math.random().toString(36).substr(2, 9);
+            this._expression += 'data.' + uniqID;
+            this._policies[uniqID] = createTargetPolicy(origin.target, origin.algorithm, origin.effect);
         } else {
-            // create new policy from two 'check' methods & operation
-            this.check = function (user, action, env, resource) { // todo refactor for avoid of closer
-                let a = origin(user, action, env, resource);
-                let b = policy(user, action, env, resource);
-                return (effect === '||') ? (a || b) : (a && b);
-            };
+            // create new policy from existing two
+            this._expression = origin._expression + effect + policy._expression;
+            Object.assign(this._policies, origin._policies, policy._policies);
         }
     }
 
+    check(user, action, env, resource) {
+        let result = {};
+        for (let key of Object.keys(this._policies)) {
+            result[key] = this._policies[key](user, action, env, resource);
+        }
+
+        return (new Function('data', 'return ' + this._expression + ';'))(result);
+    }
+
     and(policy) {
-        return new Policy(this.check, policy.check, '&&');
+        return new Policy(this, policy, '&&');
     }
 
     or(policy) {
-        return new Policy(this.check, policy.check, '||');
+        return new Policy(this, policy, '||');
     }
 }
 
