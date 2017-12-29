@@ -99,7 +99,7 @@ class Policy {
         }
     }
 
-    add(policy) {
+    and(policy) {
         return new Policy(this.check, policy.check, '&&');
     }
 

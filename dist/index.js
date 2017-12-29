@@ -216,8 +216,8 @@ var Policy = function () {
     }
 
     _createClass(Policy, [{
-        key: 'add',
-        value: function add(policy) {
+        key: 'and',
+        value: function and(policy) {
             return new Policy(this.check, policy.check, '&&');
         }
     }, {
