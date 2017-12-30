@@ -1,0 +1,13 @@
+export default {
+    $trim: function(str) {
+        return str.trim();
+    },
+
+    $uppercase: function (str) {
+        return str.toUpperCase();
+    },
+
+    $lowercase: function (str) {
+        return str.toLowerCase();
+    }
+}

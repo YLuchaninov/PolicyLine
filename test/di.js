@@ -155,5 +155,9 @@ describe("Dependency Injection", function () {
     afterEach(function () {
         DI.clear();
     });
+
+    after(function () {
+        DI.loadPresets();
+    });
 });
 

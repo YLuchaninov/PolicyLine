@@ -1,3 +1,5 @@
+import Packages from './DI/index';
+
 const namespace = 'abac_di';
 
 const settings = {
@@ -54,6 +56,14 @@ let DI = {
 
     clear() {
         delete global[namespace];
+    },
+
+    loadPresets() {
+        for (let di_package of Object.keys(Packages)) {
+            for (let fnName of Object.keys(Packages[di_package])) {
+                DI.register(fnName, Packages[di_package][fnName]);
+            }
+        }
     }
 };
 
@@ -90,9 +100,9 @@ function compilePolicy(target = [], algorithm = 'all', effect = 'deny') {
 function compileGroupExpression(origin) {
     let re, expr = origin.expression;
 
-    for(let key of Object.keys(origin.policies)){
-        re = new RegExp('\\b'+key+'\\b', "g");
-        expr = expr.replace(re, 'data.'+key);
+    for (let key of Object.keys(origin.policies)) {
+        re = new RegExp('\\b' + key + '\\b', "g");
+        expr = expr.replace(re, 'data.' + key);
     }
 
     return expr
@@ -156,6 +166,9 @@ class Policy {
 // static methods
 Policy.compilePolicy = compilePolicy;
 Policy.compileRule = compileRule;
+
+// service DI
+DI.loadPresets();
 
 export {
     Policy,
