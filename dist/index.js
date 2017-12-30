@@ -88,6 +88,8 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var namespace = 'abac_di';
@@ -168,7 +170,8 @@ var DI = {
 };
 
 // todo refactoring
-function createTargetPolicy(target) {
+function createTargetPolicy() {
+    var target = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
     var algorithm = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'all';
     var effect = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'deny';
 
@@ -200,38 +203,30 @@ function createTargetPolicy(target) {
     };
 }
 
+function compilePolicyExpression(expr) {
+    // todo compile expression
+    return expr;
+}
+
 var Policy = function () {
-    function Policy(origin, policy, effect) {
-        _classCallCheck(this, Policy);
-
-        this._expression = '';
-        this._policies = {};
-
-        // constructor part
-        if (policy === undefined && effect === undefined) {
-            var uniqID = '_' + Math.random().toString(36).substr(2, 9);
-            this._expression += 'data.' + uniqID;
-            this._policies[uniqID] = createTargetPolicy(origin.target, origin.algorithm, origin.effect);
-        } else {
-            // create new policy from existing two
-            this._expression = origin._expression + effect + policy._expression;
-            Object.assign(this._policies, origin._policies, policy._policies);
-        }
-    }
-
     _createClass(Policy, [{
-        key: 'check',
-        value: function check(user, action, env, resource) {
-            var result = {};
+        key: '_groupConstructor',
+        value: function _groupConstructor(origin) {
+            this._expression = compilePolicyExpression(origin.expression);
+            this._policies = {};
             var _iteratorNormalCompletion2 = true;
             var _didIteratorError2 = false;
             var _iteratorError2 = undefined;
 
             try {
-                for (var _iterator2 = Object.keys(this._policies)[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                for (var _iterator2 = Object.keys(origin.policies)[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
                     var key = _step2.value;
+                    var _origin$policies$key = origin.policies[key],
+                        target = _origin$policies$key.target,
+                        algorithm = _origin$policies$key.algorithm,
+                        effect = _origin$policies$key.effect;
 
-                    result[key] = this._policies[key](user, action, env, resource);
+                    this._policies[key] = createTargetPolicy(target, algorithm, effect);
                 }
             } catch (err) {
                 _didIteratorError2 = true;
@@ -244,6 +239,63 @@ var Policy = function () {
                 } finally {
                     if (_didIteratorError2) {
                         throw _iteratorError2;
+                    }
+                }
+            }
+        }
+    }, {
+        key: '_singleConstructor',
+        value: function _singleConstructor(target, algorithm, effect) {
+            var uniqID = '_' + Math.random().toString(36).substr(2, 9);
+            this._expression = 'data.' + uniqID;
+            this._policies = _defineProperty({}, uniqID, createTargetPolicy(target, algorithm, effect));
+        }
+    }, {
+        key: '_mergeConstructor',
+        value: function _mergeConstructor(origin, source, effect) {
+            this._expression = origin._expression + effect + source._expression;
+            this._policies = {};
+            Object.assign(this._policies, origin._policies, source._policies);
+        }
+    }]);
+
+    function Policy(origin, source, effect) {
+        _classCallCheck(this, Policy);
+
+        if (origin.expression !== undefined && origin.policies !== undefined) {
+            this._groupConstructor(origin);
+        } else if (source === undefined && effect === undefined) {
+            this._singleConstructor(origin.target, origin.algorithm, origin.effect);
+        } else {
+            this._mergeConstructor(origin, source, effect);
+        }
+    }
+
+    _createClass(Policy, [{
+        key: 'check',
+        value: function check(user, action, env, resource) {
+            var result = {};
+            var _iteratorNormalCompletion3 = true;
+            var _didIteratorError3 = false;
+            var _iteratorError3 = undefined;
+
+            try {
+                for (var _iterator3 = Object.keys(this._policies)[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+                    var key = _step3.value;
+
+                    result[key] = this._policies[key](user, action, env, resource);
+                }
+            } catch (err) {
+                _didIteratorError3 = true;
+                _iteratorError3 = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion3 && _iterator3.return) {
+                        _iterator3.return();
+                    }
+                } finally {
+                    if (_didIteratorError3) {
+                        throw _iteratorError3;
                     }
                 }
             }

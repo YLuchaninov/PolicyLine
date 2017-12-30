@@ -58,7 +58,7 @@ let DI = {
 };
 
 // todo refactoring
-function createTargetPolicy(target, algorithm = 'all', effect = 'deny') {
+function createTargetPolicy(target = [], algorithm = 'all', effect = 'deny') {
     let flag = !(algorithm === 'any');
     let rules = [];
     for (let i = 0; i < target.length; i++) {
@@ -87,20 +87,43 @@ function createTargetPolicy(target, algorithm = 'all', effect = 'deny') {
     }
 }
 
-class Policy {
-    constructor(origin, policy, effect) {
-        this._expression = '';
-        this._policies = {};
+function compilePolicyExpression(expr) {
+    // todo compile expression
+    return expr;
+}
 
-        // constructor part
-        if (policy === undefined && effect === undefined) {
-            let uniqID = '_' + Math.random().toString(36).substr(2, 9);
-            this._expression += 'data.' + uniqID;
-            this._policies[uniqID] = createTargetPolicy(origin.target, origin.algorithm, origin.effect);
+class Policy {
+    _groupConstructor(origin) {
+        this._expression = compilePolicyExpression(origin.expression);
+        this._policies = {};
+        for (let key of Object.keys(origin.policies)) {
+            let {target, algorithm, effect} = origin.policies[key];
+            this._policies[key] = createTargetPolicy(target, algorithm, effect);
+        }
+    }
+
+    _singleConstructor(target, algorithm, effect) {
+        let uniqID = '_' + Math.random().toString(36).substr(2, 9);
+        this._expression = 'data.' + uniqID;
+        this._policies = {
+            [uniqID]: createTargetPolicy(target, algorithm, effect)
+        };
+    }
+
+    _mergeConstructor(origin, source, effect) {
+        this._expression = origin._expression + effect + source._expression;
+        this._policies = {};
+        Object.assign(this._policies, origin._policies, source._policies);
+    }
+
+
+    constructor(origin, source, effect) {
+        if ((origin.expression !== undefined) && (origin.policies !== undefined)) {
+            this._groupConstructor(origin);
+        } else if (source === undefined && effect === undefined) {
+            this._singleConstructor(origin.target, origin.algorithm, origin.effect);
         } else {
-            // create new policy from existing two
-            this._expression = origin._expression + effect + policy._expression;
-            Object.assign(this._policies, origin._policies, policy._policies);
+            this._mergeConstructor(origin, source, effect);
         }
     }
 

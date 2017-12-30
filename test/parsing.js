@@ -157,5 +157,35 @@ describe("Parsing", function () {
 
         expect(policy.check(user, null, env)).to.equal(false);
     });
+
+    it(":empty target - permit", function () {
+        let rules = {
+            target: [
+            ],
+            effect: "permit",
+            algorithm: "all"
+        };
+
+        let policy = new Policy(rules);
+        let user = {value: 100};
+        let env = {value: 10};
+
+        expect(policy.check(user, null, env)).to.equal(true);
+    });
+
+    it(":empty target - deny", function () {
+        let rules = {
+            target: [
+            ],
+            effect: "permit",
+            algorithm: "all"
+        };
+
+        let policy = new Policy(rules);
+        let user = {value: 100};
+        let env = {value: 10};
+
+        expect(policy.check(user, null, env)).to.equal(true);
+    });
 });
 
