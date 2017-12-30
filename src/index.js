@@ -4,7 +4,7 @@ const settings = {
     log: true
 };
 
-function parseRule(rule) {
+function compileRule(rule) {
     let ruleReg = /([^<>=]+)\s?([<>=!]{1,2})\s?(.+)/;
     try {
         let ruleArray = ruleReg.exec(rule).slice(1, 4);
@@ -58,11 +58,11 @@ let DI = {
 };
 
 // todo refactoring
-function createTargetPolicy(target = [], algorithm = 'all', effect = 'deny') {
+function compilePolicy(target = [], algorithm = 'all', effect = 'deny') {
     let flag = !(algorithm === 'any');
     let rules = [];
     for (let i = 0; i < target.length; i++) {
-        rules[i] = parseRule(target[i]);
+        rules[i] = compileRule(target[i]);
     }
 
     return function (user, action, env, resource) {
@@ -87,18 +87,26 @@ function createTargetPolicy(target = [], algorithm = 'all', effect = 'deny') {
     }
 }
 
-function compilePolicyExpression(expr) {
-    // todo compile expression
-    return expr;
+function compileGroupExpression(origin) {
+    let re, expr = origin.expression;
+
+    for(let key of Object.keys(origin.policies)){
+        re = new RegExp('\\b'+key+'\\b', "g");
+        expr = expr.replace(re, 'data.'+key);
+    }
+
+    return expr
+        .replace(/\bAND\b/g, '&&')
+        .replace(/\bOR\b/g, '||');
 }
 
 class Policy {
     _groupConstructor(origin) {
-        this._expression = compilePolicyExpression(origin.expression);
+        this._expression = compileGroupExpression(origin);
         this._policies = {};
         for (let key of Object.keys(origin.policies)) {
             let {target, algorithm, effect} = origin.policies[key];
-            this._policies[key] = createTargetPolicy(target, algorithm, effect);
+            this._policies[key] = compilePolicy(target, algorithm, effect);
         }
     }
 
@@ -106,7 +114,7 @@ class Policy {
         let uniqID = '_' + Math.random().toString(36).substr(2, 9);
         this._expression = 'data.' + uniqID;
         this._policies = {
-            [uniqID]: createTargetPolicy(target, algorithm, effect)
+            [uniqID]: compilePolicy(target, algorithm, effect)
         };
     }
 
@@ -146,8 +154,8 @@ class Policy {
 }
 
 // static methods
-Policy.createTargetPolicy = createTargetPolicy;
-Policy.parseRule = parseRule;
+Policy.compilePolicy = compilePolicy;
+Policy.compileRule = compileRule;
 
 export {
     Policy,

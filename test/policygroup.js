@@ -4,10 +4,10 @@ let expect = require('chai').expect;
 let Policy = require('../dist/').Policy;
 
 describe("Policy Group", function () {
-    it(": base functionality", function () {
+    it(": group expression", function () {
 
         let policyGroup = { // all algorithms set in 'all' by default
-            expression: '(data.user&&data.location)||data.admin', // todo
+            expression: '(user AND location)OR(admin OR super_admin)',
             policies: {
                 user: {
                     target: [
@@ -26,7 +26,14 @@ describe("Policy Group", function () {
                         "user.role='admin'"
                     ],
                     effect: "permit"
+                },
+                super_admin: {
+                    target: [
+                        "user.role='admin'"
+                    ],
+                    effect: "permit"
                 }
+
             }
         };
         let policy = new Policy(policyGroup);
