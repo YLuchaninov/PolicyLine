@@ -1,4 +1,4 @@
-import Packages from './DI/index';
+import files from './DI/index';
 
 const namespace = 'abac_di';
 
@@ -18,7 +18,7 @@ function compileRule(rule) {
         // DI section
         let di = '';
         if (global[namespace] !== undefined) {
-            for (const key of Object.keys(global[namespace])) {
+            for (const key in global[namespace]) {
                 if (rule.includes(key)) {
                     di += 'var ' + key + '=' + namespace + '.' + key + ';';
                 }
@@ -59,27 +59,28 @@ let DI = {
     },
 
     loadPresets() {
-        for (let di_package of Object.keys(Packages)) {
-            for (let fnName of Object.keys(Packages[di_package])) {
-                DI.register(fnName, Packages[di_package][fnName]);
+        for (const fileName in files) {
+            for (const fnName in files[fileName]) {
+                DI.register(fnName, files[fileName][fnName]);
             }
         }
     }
 };
 
-// todo refactoring
 function compilePolicy(target = [], algorithm = 'all', effect = 'deny') {
     let flag = !(algorithm === 'any');
     let rules = [];
-    for (let i = 0; i < target.length; i++) {
-        rules[i] = compileRule(target[i]);
-    }
+    let deny = effect === "deny";
+
+    target.forEach((rule) => {
+        rules.push(compileRule(rule));
+    });
 
     return function (user, action, env, resource) {
         let result = flag;
 
-        for (let i = 0; i < target.length; i++) {
-            let ruleResult = rules[i](user, action, env, resource);
+        for (let rule of rules) {
+            let ruleResult = rule(user, action, env, resource);
 
             // any case with errors to deny of whole policy
             if (typeof ruleResult === 'object') {
@@ -93,14 +94,14 @@ function compilePolicy(target = [], algorithm = 'all', effect = 'deny') {
             result = flag ? (result && ruleResult) : (result || ruleResult);
         }
 
-        return (effect === "deny") ? !result : result;
+        return deny ? !result : result;
     }
 }
 
 function compileGroupExpression(origin) {
     let re, expr = origin.expression;
 
-    for (let key of Object.keys(origin.policies)) {
+    for (const key in origin.policies) {
         re = new RegExp('\\b' + key + '\\b', "g");
         expr = expr.replace(re, 'data.' + key);
     }
@@ -114,7 +115,7 @@ class Policy {
     _groupConstructor(origin) {
         this._expression = compileGroupExpression(origin);
         this._policies = {};
-        for (let key of Object.keys(origin.policies)) {
+        for (const key in origin.policies) {
             let {target, algorithm, effect} = origin.policies[key];
             this._policies[key] = compilePolicy(target, algorithm, effect);
         }
@@ -147,7 +148,7 @@ class Policy {
 
     check(user, action, env, resource) {
         let result = {};
-        for (let key of Object.keys(this._policies)) {
+        for (const key in this._policies) {
             result[key] = this._policies[key](user, action, env, resource);
         }
 

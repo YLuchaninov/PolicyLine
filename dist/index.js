@@ -117,30 +117,9 @@ function compileRule(rule) {
         // DI section
         var di = '';
         if (global[namespace] !== undefined) {
-            var _iteratorNormalCompletion = true;
-            var _didIteratorError = false;
-            var _iteratorError = undefined;
-
-            try {
-                for (var _iterator = Object.keys(global[namespace])[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                    var key = _step.value;
-
-                    if (rule.includes(key)) {
-                        di += 'var ' + key + '=' + namespace + '.' + key + ';';
-                    }
-                }
-            } catch (err) {
-                _didIteratorError = true;
-                _iteratorError = err;
-            } finally {
-                try {
-                    if (!_iteratorNormalCompletion && _iterator.return) {
-                        _iterator.return();
-                    }
-                } finally {
-                    if (_didIteratorError) {
-                        throw _iteratorError;
-                    }
+            for (var key in global[namespace]) {
+                if (rule.includes(key)) {
+                    di += 'var ' + key + '=' + namespace + '.' + key + ';';
                 }
             }
         }
@@ -175,56 +154,14 @@ var DI = {
         delete global[namespace];
     },
     loadPresets: function loadPresets() {
-        var _iteratorNormalCompletion2 = true;
-        var _didIteratorError2 = false;
-        var _iteratorError2 = undefined;
-
-        try {
-            for (var _iterator2 = Object.keys(_index2.default)[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-                var di_package = _step2.value;
-                var _iteratorNormalCompletion3 = true;
-                var _didIteratorError3 = false;
-                var _iteratorError3 = undefined;
-
-                try {
-                    for (var _iterator3 = Object.keys(_index2.default[di_package])[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-                        var fnName = _step3.value;
-
-                        DI.register(fnName, _index2.default[di_package][fnName]);
-                    }
-                } catch (err) {
-                    _didIteratorError3 = true;
-                    _iteratorError3 = err;
-                } finally {
-                    try {
-                        if (!_iteratorNormalCompletion3 && _iterator3.return) {
-                            _iterator3.return();
-                        }
-                    } finally {
-                        if (_didIteratorError3) {
-                            throw _iteratorError3;
-                        }
-                    }
-                }
-            }
-        } catch (err) {
-            _didIteratorError2 = true;
-            _iteratorError2 = err;
-        } finally {
-            try {
-                if (!_iteratorNormalCompletion2 && _iterator2.return) {
-                    _iterator2.return();
-                }
-            } finally {
-                if (_didIteratorError2) {
-                    throw _iteratorError2;
-                }
+        for (var fileName in _index2.default) {
+            for (var fnName in _index2.default[fileName]) {
+                DI.register(fnName, _index2.default[fileName][fnName]);
             }
         }
     }
 };
 
-// todo refactoring
 function compilePolicy() {
     var target = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
     var algorithm = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'all';
@@ -232,29 +169,52 @@ function compilePolicy() {
 
     var flag = !(algorithm === 'any');
     var rules = [];
-    for (var i = 0; i < target.length; i++) {
-        rules[i] = compileRule(target[i]);
-    }
+    var deny = effect === "deny";
+
+    target.forEach(function (rule) {
+        rules.push(compileRule(rule));
+    });
 
     return function (user, action, env, resource) {
         var result = flag;
 
-        for (var _i = 0; _i < target.length; _i++) {
-            var ruleResult = rules[_i](user, action, env, resource);
+        var _iteratorNormalCompletion = true;
+        var _didIteratorError = false;
+        var _iteratorError = undefined;
 
-            // any case with errors to deny of whole policy
-            if ((typeof ruleResult === 'undefined' ? 'undefined' : _typeof(ruleResult)) === 'object') {
-                if (settings.log) {
-                    console.error(ruleResult);
+        try {
+            for (var _iterator = rules[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                var rule = _step.value;
+
+                var ruleResult = rule(user, action, env, resource);
+
+                // any case with errors to deny of whole policy
+                if ((typeof ruleResult === 'undefined' ? 'undefined' : _typeof(ruleResult)) === 'object') {
+                    if (settings.log) {
+                        console.error(ruleResult);
+                    }
+                    return false;
                 }
-                return false;
-            }
 
-            // using the algorithm
-            result = flag ? result && ruleResult : result || ruleResult;
+                // using the algorithm
+                result = flag ? result && ruleResult : result || ruleResult;
+            }
+        } catch (err) {
+            _didIteratorError = true;
+            _iteratorError = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion && _iterator.return) {
+                    _iterator.return();
+                }
+            } finally {
+                if (_didIteratorError) {
+                    throw _iteratorError;
+                }
+            }
         }
 
-        return effect === "deny" ? !result : result;
+        return deny ? !result : result;
     };
 }
 
@@ -262,30 +222,9 @@ function compileGroupExpression(origin) {
     var re = void 0,
         expr = origin.expression;
 
-    var _iteratorNormalCompletion4 = true;
-    var _didIteratorError4 = false;
-    var _iteratorError4 = undefined;
-
-    try {
-        for (var _iterator4 = Object.keys(origin.policies)[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-            var key = _step4.value;
-
-            re = new RegExp('\\b' + key + '\\b', "g");
-            expr = expr.replace(re, 'data.' + key);
-        }
-    } catch (err) {
-        _didIteratorError4 = true;
-        _iteratorError4 = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion4 && _iterator4.return) {
-                _iterator4.return();
-            }
-        } finally {
-            if (_didIteratorError4) {
-                throw _iteratorError4;
-            }
-        }
+    for (var key in origin.policies) {
+        re = new RegExp('\\b' + key + '\\b', "g");
+        expr = expr.replace(re, 'data.' + key);
     }
 
     return expr.replace(/\bAND\b/g, '&&').replace(/\bOR\b/g, '||');
@@ -297,33 +236,13 @@ var Policy = function () {
         value: function _groupConstructor(origin) {
             this._expression = compileGroupExpression(origin);
             this._policies = {};
-            var _iteratorNormalCompletion5 = true;
-            var _didIteratorError5 = false;
-            var _iteratorError5 = undefined;
+            for (var key in origin.policies) {
+                var _origin$policies$key = origin.policies[key],
+                    target = _origin$policies$key.target,
+                    algorithm = _origin$policies$key.algorithm,
+                    effect = _origin$policies$key.effect;
 
-            try {
-                for (var _iterator5 = Object.keys(origin.policies)[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-                    var key = _step5.value;
-                    var _origin$policies$key = origin.policies[key],
-                        target = _origin$policies$key.target,
-                        algorithm = _origin$policies$key.algorithm,
-                        effect = _origin$policies$key.effect;
-
-                    this._policies[key] = compilePolicy(target, algorithm, effect);
-                }
-            } catch (err) {
-                _didIteratorError5 = true;
-                _iteratorError5 = err;
-            } finally {
-                try {
-                    if (!_iteratorNormalCompletion5 && _iterator5.return) {
-                        _iterator5.return();
-                    }
-                } finally {
-                    if (_didIteratorError5) {
-                        throw _iteratorError5;
-                    }
-                }
+                this._policies[key] = compilePolicy(target, algorithm, effect);
             }
         }
     }, {
@@ -358,29 +277,8 @@ var Policy = function () {
         key: 'check',
         value: function check(user, action, env, resource) {
             var result = {};
-            var _iteratorNormalCompletion6 = true;
-            var _didIteratorError6 = false;
-            var _iteratorError6 = undefined;
-
-            try {
-                for (var _iterator6 = Object.keys(this._policies)[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-                    var key = _step6.value;
-
-                    result[key] = this._policies[key](user, action, env, resource);
-                }
-            } catch (err) {
-                _didIteratorError6 = true;
-                _iteratorError6 = err;
-            } finally {
-                try {
-                    if (!_iteratorNormalCompletion6 && _iterator6.return) {
-                        _iterator6.return();
-                    }
-                } finally {
-                    if (_didIteratorError6) {
-                        throw _iteratorError6;
-                    }
-                }
+            for (var key in this._policies) {
+                result[key] = this._policies[key](user, action, env, resource);
             }
 
             return new Function('data', 'return ' + this._expression + ';')(result);
