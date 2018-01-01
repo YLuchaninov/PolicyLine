@@ -9,5 +9,9 @@ export default {
 
     $lowercase: function (str) {
         return str.toLowerCase();
+    },
+
+    $strToInt: function (str) {
+        return parseInt(str, 10);
     }
 }
