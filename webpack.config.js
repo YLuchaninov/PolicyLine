@@ -1,13 +1,31 @@
 var path = require('path');
 var webpack = require('webpack');
 
+var UglifyJsPlugin = webpack.optimize.UglifyJsPlugin;
+var env = process.env.WEBPACK_ENV;
+var libraryName = 'policyline';
+var plugins = [], outputFile;
+
+if (env === 'build') {
+    plugins.push(new UglifyJsPlugin({minimize: true}));
+    outputFile = libraryName + '.min.js';
+} else {
+    outputFile = libraryName + '.js';
+}
+
 module.exports = {
     entry: './src/index.js',
     output: {
         path: path.resolve(__dirname, 'dist'),
-        filename: 'index.js',
-        library: 'policyline',
-        libraryTarget: 'umd'
+        filename: outputFile,
+        library: libraryName,
+        libraryTarget: 'commonjs2'
+    },
+    externals: {
+        moment: {
+            commonjs: 'moment',
+            commonjs2: 'moment'
+        }
     },
     module: {
         loaders: [
@@ -23,5 +41,6 @@ module.exports = {
     stats: {
         colors: true
     },
-    devtool: 'source-map'
+    devtool: 'source-map',
+    plugins: plugins
 };

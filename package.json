@@ -2,9 +2,10 @@
   "name": "policyline",
   "version": "0.0.1",
   "description": "Attributes Based Access Control library for Node.JS",
-  "main": "dist/index.js",
+  "main": "dist/policyline.min.js",
   "scripts": {
-    "build": "webpack",
+    "build": "WEBPACK_ENV=build webpack",
+    "dev": "WEBPACK_ENV=dev webpack --progress --colors",
     "test": "mocha --recursive"
   },
   "repository": {

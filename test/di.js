@@ -1,7 +1,7 @@
 "use strict";
 
 let expect = require('chai').expect;
-let ABAC = require('../dist/');
+let ABAC = require('../dist/policyline.min');
 
 let Policy = ABAC.Policy;
 let DI = ABAC.DI;

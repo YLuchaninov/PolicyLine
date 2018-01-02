@@ -1,7 +1,7 @@
 "use strict";
 
 let expect = require('chai').expect;
-let Policy = require('../dist/').Policy;
+let Policy = require('../dist/policyline.min').Policy;
 
 describe("Effects", function () {
     it(": permit", function () {

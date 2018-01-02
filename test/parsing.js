@@ -1,7 +1,7 @@
 "use strict";
 
 let expect = require('chai').expect;
-let Policy = require('../dist/').Policy;
+let Policy = require('../dist/policyline.min').Policy;
 
 // user, action, env, resource
 describe("Parsing", function () {
