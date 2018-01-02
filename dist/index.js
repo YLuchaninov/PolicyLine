@@ -16557,9 +16557,9 @@ var _index2 = _interopRequireDefault(_index);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 var namespace = 'abac_di';
 
@@ -16692,16 +16692,8 @@ function compileGroupExpression(origin) {
     return expr.replace(/\bAND\b/g, '&&').replace(/\bOR\b/g, '||');
 }
 
-function mix(target, source) {
-    if ((typeof target === 'undefined' ? 'undefined' : _typeof(target)) !== 'object' && target !== null) {
-        return source;
-    }
-
-    return Object.assign(target, source);
-}
-
 function compileCondition(condition) {
-    var conditionReg = /([^<>=]+)\s?([<>=!]{1,2})\s?(.+)/; // todo change RegExp to more stricter
+    var conditionReg = /([\w\.\'\"\$]+)\s?([<>=!]{1,2})\s?(.+)/; // more stricter than 'target' regexp
     var conditionArray = conditionReg.exec(condition).slice(1, 4);
 
     conditionArray[0] = conditionArray[0].replace('resource.', '');
@@ -16709,8 +16701,8 @@ function compileCondition(condition) {
     return conditionArray;
 }
 
-function calculateCondition(expr, data) {
-    return new Function('user', 'action', 'env', 'resource', 'return ' + expr + ';')(data.user, data.action, data.env, data.resource);
+function createCondition(expr) {
+    return new Function('user', 'action', 'env', 'resource', 'return ' + expr + ';');
 }
 
 function wrap(namespace, container, value) {
@@ -16746,45 +16738,72 @@ function wrapNamespaces(obj) {
     return obj;
 }
 
-function prepareCondition(conditions, data) {
-    // todo move it to construction part for performance(except 'calculate')
+function prepareCondition(conditions) {
     var result = {};
+    var _iteratorNormalCompletion2 = true;
+    var _didIteratorError2 = false;
+    var _iteratorError2 = undefined;
+
     try {
-        var _iteratorNormalCompletion2 = true;
-        var _didIteratorError2 = false;
-        var _iteratorError2 = undefined;
+        for (var _iterator2 = conditions[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+            var condition = _step2.value;
 
-        try {
-            for (var _iterator2 = conditions[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-                var condition = _step2.value;
-
-                var rule = compileCondition(condition);
-                if (rule[1] === '=' || rule[1] === '==') {
-                    result[rule[0]] = calculateCondition(rule[2], data);
-                } else {
-                    result[rule[0]] = [rule[1], calculateCondition(rule[2], data)];
-                }
-            }
-        } catch (err) {
-            _didIteratorError2 = true;
-            _iteratorError2 = err;
-        } finally {
-            try {
-                if (!_iteratorNormalCompletion2 && _iterator2.return) {
-                    _iterator2.return();
-                }
-            } finally {
-                if (_didIteratorError2) {
-                    throw _iteratorError2;
-                }
+            var rule = compileCondition(condition);
+            if (rule[1] === '=' || rule[1] === '==') {
+                result[rule[0]] = createCondition(rule[2]);
+            } else {
+                result[rule[0]] = [rule[1], createCondition(rule[2])];
             }
         }
-
-        result = wrapNamespaces(result);
-    } catch (e) {
-        return e;
+    } catch (err) {
+        _didIteratorError2 = true;
+        _iteratorError2 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                _iterator2.return();
+            }
+        } finally {
+            if (_didIteratorError2) {
+                throw _iteratorError2;
+            }
+        }
     }
-    return result;
+
+    return wrapNamespaces(result);
+}
+
+function calculateCondition(target, source, data) {
+    for (var key in source) {
+        if (Array.isArray(source[key])) {
+            target[key] = [source[key][0]];
+            target[key].push(source[key][1](data.user, data.action, data.env, data.resource));
+        } else if (typeof source[key] === 'function') {
+            target[key] = source[key](data.user, data.action, data.env, data.resource);
+        } else {
+            target[key] = {};
+            calculateCondition(target[key], source[key], data);
+        }
+    }
+    return target;
+}
+
+function isObject(item) {
+    return item && (typeof item === 'undefined' ? 'undefined' : _typeof(item)) === 'object' && !Array.isArray(item) && item !== null;
+}
+
+function mergeDeep(target, source) {
+    if (isObject(target) && isObject(source)) {
+        for (var key in source) {
+            if (isObject(source[key])) {
+                if (!target[key]) Object.assign(target, _defineProperty({}, key, {}));
+                mergeDeep(target[key], source[key]);
+            } else {
+                Object.assign(target, _defineProperty({}, key, source[key]));
+            }
+        }
+    }
+    return target || source;
 }
 
 var property = Symbol();
@@ -16803,7 +16822,7 @@ var Policy = function () {
 
                 this._policies[key] = compilePolicy(target, algorithm, effect);
             }
-            this._condition = origin.condition || [];
+            this._condition = prepareCondition(origin.condition || []);
         }
     }, {
         key: '_singleConstructor',
@@ -16811,14 +16830,15 @@ var Policy = function () {
             var uniqID = '_' + Math.random().toString(36).substr(2, 9);
             this._expression = 'data.' + uniqID;
             this._policies = _defineProperty({}, uniqID, compilePolicy(target, algorithm, effect));
-            this._condition = condition || [];
+            this._condition = prepareCondition(condition || []);
         }
     }, {
         key: '_mergeConstructor',
         value: function _mergeConstructor(origin, source, effect) {
             this._expression = origin._expression + effect + source._expression;
             this._policies = Object.assign({}, origin._policies, source._policies);
-            this._condition = origin._condition.concat(source._condition);
+            var tmp = mergeDeep({}, origin._condition);
+            this._condition = mergeDeep(tmp, source._condition);
         }
     }]);
 
@@ -16854,19 +16874,20 @@ var Policy = function () {
         key: 'condition',
         value: function condition(user, action, env, resource) {
             var result = {
-                user: mix(user, this[property].user),
-                action: mix(action, this[property].action),
-                env: mix(env, this[property].env),
-                resource: mix(resource, this[property].resource)
+                user: mergeDeep(user, this[property].user),
+                action: mergeDeep(action, this[property].action),
+                env: mergeDeep(env, this[property].env),
+                resource: mergeDeep(resource, this[property].resource)
             };
-
-            result.condition = this._condition ? prepareCondition(this._condition, result) : undefined;
-
-            // clear private container
             this[property] = {};
 
-            // if error - return error
-            return result.condition instanceof Error ? result.condition : result;
+            try {
+                result.condition = calculateCondition({}, this._condition, result);
+            } catch (e) {
+                result = e;
+            }
+
+            return result;
         }
     }, {
         key: 'and',

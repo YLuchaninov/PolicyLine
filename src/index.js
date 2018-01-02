@@ -111,16 +111,8 @@ function compileGroupExpression(origin) {
         .replace(/\bOR\b/g, '||');
 }
 
-function mix(target, source) {
-    if (typeof target !== 'object' && target !== null) {
-        return source;
-    }
-
-    return Object.assign(target, source);
-}
-
 function compileCondition(condition) {
-    let conditionReg = /([^<>=]+)\s?([<>=!]{1,2})\s?(.+)/; // todo change RegExp to more stricter
+    let conditionReg = /([\w\.\'\"\$]+)\s?([<>=!]{1,2})\s?(.+)/; // more stricter than 'target' regexp
     let conditionArray = conditionReg.exec(condition).slice(1, 4);
 
     conditionArray[0] = conditionArray[0].replace('resource.', '');
@@ -128,9 +120,8 @@ function compileCondition(condition) {
     return conditionArray;
 }
 
-function calculateCondition(expr, data) {
-    return (new Function('user', 'action', 'env', 'resource', 'return ' +
-        expr + ';'))(data.user, data.action, data.env, data.resource);
+function createCondition(expr) {
+    return new Function('user', 'action', 'env', 'resource', 'return ' + expr + ';');
 }
 
 function wrap(namespace, container, value) {
@@ -168,22 +159,50 @@ function wrapNamespaces(obj) {
     return obj;
 }
 
-function prepareCondition(conditions, data) { // todo move it to construction part for performance(except 'calculate')
+function prepareCondition(conditions) {
     let result = {};
-    try {
-        for (let condition of conditions) {
-            let rule = compileCondition(condition);
-            if (rule[1] === '=' || rule[1] === '==') {
-                result[rule[0]] = calculateCondition(rule[2], data);
+    for (let condition of conditions) {
+        let rule = compileCondition(condition);
+        if (rule[1] === '=' || rule[1] === '==') {
+            result[rule[0]] = createCondition(rule[2]);
+        } else {
+            result[rule[0]] = [rule[1], createCondition(rule[2])];
+        }
+    }
+    return wrapNamespaces(result);
+}
+
+function calculateCondition(target, source, data) {
+    for (let key in source) {
+        if (Array.isArray(source[key])) {
+            target[key] = [source[key][0]];
+            target[key].push(source[key][1](data.user, data.action, data.env, data.resource));
+        } else if (typeof source[key] === 'function') {
+            target[key] = source[key](data.user, data.action, data.env, data.resource)
+        } else {
+            target[key] = {};
+            calculateCondition(target[key], source[key], data);
+        }
+    }
+    return target;
+}
+
+function isObject(item) {
+    return (item && typeof item === 'object' && !Array.isArray(item) && item !== null);
+}
+
+function mergeDeep(target, source) {
+    if (isObject(target) && isObject(source)) {
+        for (const key in source) {
+            if (isObject(source[key])) {
+                if (!target[key]) Object.assign(target, {[key]: {}});
+                mergeDeep(target[key], source[key]);
             } else {
-                result[rule[0]] = [rule[1], calculateCondition(rule[2], data)];
+                Object.assign(target, {[key]: source[key]});
             }
         }
-        result = wrapNamespaces(result);
-    } catch (e) {
-        return e;
     }
-    return result;
+    return target || source;
 }
 
 let property = Symbol();
@@ -196,7 +215,7 @@ class Policy {
             let {target, algorithm, effect} = origin.policies[key];
             this._policies[key] = compilePolicy(target, algorithm, effect);
         }
-        this._condition = origin.condition || [];
+        this._condition = prepareCondition(origin.condition || []);
     }
 
     _singleConstructor(target, algorithm, effect, condition) {
@@ -205,13 +224,14 @@ class Policy {
         this._policies = {
             [uniqID]: compilePolicy(target, algorithm, effect)
         };
-        this._condition = condition || [];
+        this._condition = prepareCondition(condition || []);
     }
 
     _mergeConstructor(origin, source, effect) {
         this._expression = origin._expression + effect + source._expression;
         this._policies = Object.assign({}, origin._policies, source._policies);
-        this._condition = origin._condition.concat(source._condition);
+        let tmp = mergeDeep({}, origin._condition);
+        this._condition = mergeDeep(tmp, source._condition);
     }
 
     constructor(origin, source, effect) {
@@ -241,19 +261,20 @@ class Policy {
 
     condition(user, action, env, resource) {
         let result = {
-            user: mix(user, this[property].user),
-            action: mix(action, this[property].action),
-            env: mix(env, this[property].env),
-            resource: mix(resource, this[property].resource)
+            user: mergeDeep(user, this[property].user),
+            action: mergeDeep(action, this[property].action),
+            env: mergeDeep(env, this[property].env),
+            resource: mergeDeep(resource, this[property].resource)
         };
-
-        result.condition = this._condition ? prepareCondition(this._condition, result) : undefined;
-
-        // clear private container
         this[property] = {};
 
-        // if error - return error
-        return (result.condition instanceof Error) ? result.condition : result;
+        try {
+            result.condition = calculateCondition({}, this._condition, result);
+        } catch (e) {
+            result = e;
+        }
+
+        return result;
     }
 
     and(policy) {

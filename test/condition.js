@@ -41,6 +41,58 @@ describe("Condition", function () {
         });
     });
 
+    it(": second execution after fail", function () {
+        let rules = {
+            condition: [
+                "resource.name='post'",
+                "resource.location=user.location"
+            ]
+        };
+
+        let policy = new Policy(rules);
+        let user = {location: 'NY'};
+
+        // fail check
+        policy.check();
+
+        policy.check(user);
+        let condition = policy.condition();
+
+        expect(condition).to.deep.own.include({
+            user: {location: 'NY'},
+            condition: {
+                name: 'post',
+                location: 'NY'
+            }
+        });
+    });
+
+    it(": second execution after positive check", function () {
+        let rules = {
+            condition: [
+                "resource.name='post'",
+                "resource.location=user.location"
+            ]
+        };
+
+        let policy = new Policy(rules);
+        let user = {location: 'NY'};
+
+        // fail check
+        policy.check(user);
+
+        policy.check(user);
+        let condition = policy.condition();
+
+        expect(condition).to.deep.own.include({
+            user: {location: 'NY'},
+            condition: {
+                name: 'post',
+                location: 'NY'
+            }
+        });
+    });
+
     it(": compile operation", function () {
         let rules = {
             condition: [
