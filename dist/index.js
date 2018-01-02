@@ -16701,7 +16701,7 @@ function mix(target, source) {
 }
 
 function compileCondition(condition) {
-    var conditionReg = /([^<>=]+)\s?([<>=!]{1,2})\s?(.+)/;
+    var conditionReg = /([^<>=]+)\s?([<>=!]{1,2})\s?(.+)/; // todo change RegExp to more stricter
     var conditionArray = conditionReg.exec(condition).slice(1, 4);
 
     conditionArray[0] = conditionArray[0].replace('resource.', '');
@@ -16713,39 +16713,77 @@ function calculateCondition(expr, data) {
     return new Function('user', 'action', 'env', 'resource', 'return ' + expr + ';')(data.user, data.action, data.env, data.resource);
 }
 
-function prepareCondition(conditions, data) {
-    var result = {};
-    var _iteratorNormalCompletion2 = true;
-    var _didIteratorError2 = false;
-    var _iteratorError2 = undefined;
+function wrap(namespace, container, value) {
+    var key = namespace.substring(0, namespace.indexOf('.'));
+    var name = namespace.substring(namespace.indexOf('.') + 1);
 
-    try {
-        for (var _iterator2 = conditions[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-            var condition = _step2.value;
+    if (namespace.indexOf('\'') === 0 || namespace.indexOf('"') === 0) {
+        key = '';
+        name = namespace.replace(/[\'\"]/g, '');
+    }
 
-            var rule = compileCondition(condition);
-            if (rule[1] === '=' || rule[1] === '==') {
-                result[rule[0]] = calculateCondition(rule[2], data);
-            } else {
-                // todo ?
-                result[rule[0]] = [rule[1], rule[2]];
-            }
-        }
-    } catch (err) {
-        _didIteratorError2 = true;
-        _iteratorError2 = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion2 && _iterator2.return) {
-                _iterator2.return();
-            }
-        } finally {
-            if (_didIteratorError2) {
-                throw _iteratorError2;
-            }
+    if (name && name.includes('.') && key.length) {
+        if (!container[key]) container[key] = {};
+        wrap(name, container[key], value);
+    } else if (key.length) {
+        if (!container[key]) container[key] = {};
+        container[key][name] = value;
+    } else {
+        container[name] = value;
+    }
+
+    return container;
+}
+
+function wrapNamespaces(obj) {
+    for (var key in obj) {
+        if (key.includes('.')) {
+            wrap(key, obj, obj[key]);
+            delete obj[key];
         }
     }
 
+    return obj;
+}
+
+function prepareCondition(conditions, data) {
+    // todo move it to construction part for performance(except 'calculate')
+    var result = {};
+    try {
+        var _iteratorNormalCompletion2 = true;
+        var _didIteratorError2 = false;
+        var _iteratorError2 = undefined;
+
+        try {
+            for (var _iterator2 = conditions[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                var condition = _step2.value;
+
+                var rule = compileCondition(condition);
+                if (rule[1] === '=' || rule[1] === '==') {
+                    result[rule[0]] = calculateCondition(rule[2], data);
+                } else {
+                    result[rule[0]] = [rule[1], calculateCondition(rule[2], data)];
+                }
+            }
+        } catch (err) {
+            _didIteratorError2 = true;
+            _iteratorError2 = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                    _iterator2.return();
+                }
+            } finally {
+                if (_didIteratorError2) {
+                    throw _iteratorError2;
+                }
+            }
+        }
+
+        result = wrapNamespaces(result);
+    } catch (e) {
+        return e;
+    }
     return result;
 }
 
@@ -16830,7 +16868,9 @@ var Policy = function () {
 
             // clear private container
             this[property] = {};
-            return result;
+
+            // if error - return error
+            return result.condition instanceof Error ? result.condition : result;
         }
     }, {
         key: 'and',

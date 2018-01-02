@@ -120,10 +120,10 @@ function mix(target, source) {
 }
 
 function compileCondition(condition) {
-    let conditionReg = /([^<>=]+)\s?([<>=!]{1,2})\s?(.+)/;
+    let conditionReg = /([^<>=]+)\s?([<>=!]{1,2})\s?(.+)/; // todo change RegExp to more stricter
     let conditionArray = conditionReg.exec(condition).slice(1, 4);
 
-    conditionArray[0] = conditionArray[0].replace('resource.','');
+    conditionArray[0] = conditionArray[0].replace('resource.', '');
 
     return conditionArray;
 }
@@ -133,15 +133,55 @@ function calculateCondition(expr, data) {
         expr + ';'))(data.user, data.action, data.env, data.resource);
 }
 
-function prepareCondition(conditions, data) {
-    let result = {};
-    for(let condition of conditions) {
-        let rule = compileCondition(condition);
-        if (rule[1]==='=' || rule[1]==='=='){
-            result[rule[0]] = calculateCondition(rule[2], data);
-        } else { // todo ?
-            result[rule[0]] = [rule[1], rule[2]];
+function wrap(namespace, container, value) {
+    let key = namespace.substring(0, namespace.indexOf('.'));
+    let name = namespace.substring(namespace.indexOf('.') + 1);
+
+    if (namespace.indexOf('\'') === 0 || namespace.indexOf('"') === 0) {
+        key = '';
+        name = namespace.replace(/[\'\"]/g,'');
+    }
+
+    if (name && name.includes('.') && key.length) {
+        if (!container[key])
+            container[key] = {};
+        wrap(name, container[key], value);
+    } else if (key.length) {
+        if (!container[key])
+            container[key] = {};
+        container[key][name] = value;
+    } else {
+        container[name] = value;
+    }
+
+    return container;
+}
+
+function wrapNamespaces(obj) {
+    for (let key in obj) {
+        if (key.includes('.')) {
+            wrap(key, obj, obj[key]);
+            delete obj[key];
         }
+    }
+
+    return obj;
+}
+
+function prepareCondition(conditions, data) { // todo move it to construction part for performance(except 'calculate')
+    let result = {};
+    try {
+        for (let condition of conditions) {
+            let rule = compileCondition(condition);
+            if (rule[1] === '=' || rule[1] === '==') {
+                result[rule[0]] = calculateCondition(rule[2], data);
+            } else {
+                result[rule[0]] = [rule[1], calculateCondition(rule[2], data)];
+            }
+        }
+        result = wrapNamespaces(result);
+    } catch (e) {
+        return e;
     }
     return result;
 }
@@ -207,7 +247,7 @@ class Policy {
         let result = {
             user: mix(user, this[property].user),
             action: mix(action, this[property].action),
-            env: mix(env, this[property].env ),
+            env: mix(env, this[property].env),
             resource: mix(resource, this[property].resource)
         };
 
@@ -215,7 +255,9 @@ class Policy {
 
         // clear private container
         this[property] = {};
-        return result;
+
+        // if error - return error
+        return (result.condition instanceof Error) ? result.condition : result;
     }
 
     and(policy) {
