@@ -16803,7 +16803,7 @@ var Policy = function () {
 
                 this._policies[key] = compilePolicy(target, algorithm, effect);
             }
-            // todo this._condition =
+            this._condition = origin.condition || [];
         }
     }, {
         key: '_singleConstructor',
@@ -16811,23 +16811,19 @@ var Policy = function () {
             var uniqID = '_' + Math.random().toString(36).substr(2, 9);
             this._expression = 'data.' + uniqID;
             this._policies = _defineProperty({}, uniqID, compilePolicy(target, algorithm, effect));
-
-            // todo
-            this._condition = condition;
+            this._condition = condition || [];
         }
     }, {
         key: '_mergeConstructor',
         value: function _mergeConstructor(origin, source, effect) {
             this._expression = origin._expression + effect + source._expression;
             this._policies = Object.assign({}, origin._policies, source._policies);
-            // todo this._condition =
+            this._condition = origin._condition.concat(source._condition);
         }
     }]);
 
     function Policy(origin, source, effect) {
         _classCallCheck(this, Policy);
-
-        // todo add 'condition' part
 
         if (origin.expression !== undefined && origin.policies !== undefined) {
             this._groupConstructor(origin);

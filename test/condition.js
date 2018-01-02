@@ -91,7 +91,7 @@ describe("Condition", function () {
                 location: 'NY',
                 operation: 10
             },
-            resource: { total: 120 },
+            resource: {total: 120},
             condition: {
                 name: 'post',
                 location: 'NY',
@@ -142,5 +142,99 @@ describe("Condition", function () {
         let condition = policy.condition();
 
         expect(condition instanceof Error).to.equal(true);
+    });
+
+    it(": condition in policies composition", function () {
+
+        let rulesA = {
+            condition: [
+                "resource.occupation=/host/gi",
+                "resource.age.$gt=17"
+            ]
+        };
+
+        let rulesB = {
+            condition: [
+                "resource.age.$lt=66",
+                "resource.likes.$in=['vaporizing', 'talking']",
+            ]
+        };
+
+        let rulesC = {
+            condition: [
+                "'name.last'='Ghost'"
+            ]
+        };
+
+        // mongoose 'find' object from 'http://mongoosejs.com/docs/queries.html'
+        let result = {
+            occupation: /host/gi,
+            'name.last': 'Ghost',
+            age: {$gt: 17, $lt: 66},
+            likes: {$in: ['vaporizing', 'talking']}
+        };
+
+        let policyA = new Policy(rulesA);
+        let policyB = new Policy(rulesB);
+        let policyC = new Policy(rulesC);
+        let policy = policyA.and(policyB).or(policyC);
+        policy.check();
+
+        const condition = policy.condition().condition;
+
+        expect(condition).to.deep.equal(result);
+    });
+
+    it(": group expression", function () {
+        let policyGroup = { // all algorithms set in 'all' by default
+            expression: '(user AND location)OR(admin OR super_admin)',
+            policies: {
+                user: {
+                    target: [
+                        "user.role='user'"
+                    ],
+                    effect: "permit"
+                },
+                location: {
+                    target: [
+                        "user.location=env.location"
+                    ],
+                    effect: "permit"
+                },
+                admin: {
+                    target: [
+                        "user.role='admin'"
+                    ],
+                    effect: "permit"
+                },
+                super_admin: {
+                    target: [
+                        "user.role='admin'"
+                    ],
+                    effect: "permit"
+                }
+            },
+            condition: [
+                "resource.occupation=/host/",
+                "resource.age.$gt=17",
+                "resource.age.$lt=66",
+                "'name.last'='Ghost'",
+                "resource.likes.$in=['vaporizing', 'talking']",
+            ]
+        };
+        // mongoose 'find' object from 'http://mongoosejs.com/docs/queries.html'
+        let result = {
+            occupation: /host/,
+            'name.last': 'Ghost',
+            age: {$gt: 17, $lt: 66},
+            likes: {$in: ['vaporizing', 'talking']}
+        };
+
+        let policy = new Policy(policyGroup);
+        policy.check();
+
+        const condition = policy.condition().condition;
+
+        expect(condition).to.deep.equal(result);
     });
 });
