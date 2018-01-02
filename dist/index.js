@@ -16692,6 +16692,65 @@ function compileGroupExpression(origin) {
     return expr.replace(/\bAND\b/g, '&&').replace(/\bOR\b/g, '||');
 }
 
+function mix(target, source) {
+    if ((typeof target === 'undefined' ? 'undefined' : _typeof(target)) !== 'object' && target !== null) {
+        return source;
+    }
+
+    return Object.assign(target, source);
+}
+
+function compileCondition(condition) {
+    var conditionReg = /([^<>=]+)\s?([<>=!]{1,2})\s?(.+)/;
+    var conditionArray = conditionReg.exec(condition).slice(1, 4);
+
+    conditionArray[0] = conditionArray[0].replace('resource.', '');
+
+    return conditionArray;
+}
+
+function calculateCondition(expr, data) {
+    return new Function('user', 'action', 'env', 'resource', 'return ' + expr + ';')(data.user, data.action, data.env, data.resource);
+}
+
+function prepareCondition(conditions, data) {
+    var result = {};
+    var _iteratorNormalCompletion2 = true;
+    var _didIteratorError2 = false;
+    var _iteratorError2 = undefined;
+
+    try {
+        for (var _iterator2 = conditions[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+            var condition = _step2.value;
+
+            var rule = compileCondition(condition);
+            if (rule[1] === '=' || rule[1] === '==') {
+                result[rule[0]] = calculateCondition(rule[2], data);
+            } else {
+                // todo ?
+                result[rule[0]] = [rule[1], rule[2]];
+            }
+        }
+    } catch (err) {
+        _didIteratorError2 = true;
+        _iteratorError2 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                _iterator2.return();
+            }
+        } finally {
+            if (_didIteratorError2) {
+                throw _iteratorError2;
+            }
+        }
+    }
+
+    return result;
+}
+
+var property = Symbol();
+
 var Policy = function () {
     _createClass(Policy, [{
         key: '_groupConstructor',
@@ -16706,33 +16765,42 @@ var Policy = function () {
 
                 this._policies[key] = compilePolicy(target, algorithm, effect);
             }
+            // todo this._condition =
         }
     }, {
         key: '_singleConstructor',
-        value: function _singleConstructor(target, algorithm, effect) {
+        value: function _singleConstructor(target, algorithm, effect, condition) {
             var uniqID = '_' + Math.random().toString(36).substr(2, 9);
             this._expression = 'data.' + uniqID;
             this._policies = _defineProperty({}, uniqID, compilePolicy(target, algorithm, effect));
+
+            // todo
+            this._condition = condition;
         }
     }, {
         key: '_mergeConstructor',
         value: function _mergeConstructor(origin, source, effect) {
             this._expression = origin._expression + effect + source._expression;
-            this._policies = {};
-            Object.assign(this._policies, origin._policies, source._policies);
+            this._policies = Object.assign({}, origin._policies, source._policies);
+            // todo this._condition =
         }
     }]);
 
     function Policy(origin, source, effect) {
         _classCallCheck(this, Policy);
 
+        // todo add 'condition' part
+
         if (origin.expression !== undefined && origin.policies !== undefined) {
             this._groupConstructor(origin);
         } else if (source === undefined && effect === undefined) {
-            this._singleConstructor(origin.target, origin.algorithm, origin.effect);
+            this._singleConstructor(origin.target, origin.algorithm, origin.effect, origin.condition);
         } else {
             this._mergeConstructor(origin, source, effect);
         }
+
+        // private container for 'condition' part
+        this[property] = {};
     }
 
     _createClass(Policy, [{
@@ -16743,7 +16811,26 @@ var Policy = function () {
                 result[key] = this._policies[key](user, action, env, resource);
             }
 
+            // save data for 'condition'
+            this[property] = { user: user, action: action, env: env, resource: resource };
+
             return new Function('data', 'return ' + this._expression + ';')(result);
+        }
+    }, {
+        key: 'condition',
+        value: function condition(user, action, env, resource) {
+            var result = {
+                user: mix(user, this[property].user),
+                action: mix(action, this[property].action),
+                env: mix(env, this[property].env),
+                resource: mix(resource, this[property].resource)
+            };
+
+            result.condition = this._condition ? prepareCondition(this._condition, result) : undefined;
+
+            // clear private container
+            this[property] = {};
+            return result;
         }
     }, {
         key: 'and',

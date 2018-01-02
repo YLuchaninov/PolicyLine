@@ -111,6 +111,43 @@ function compileGroupExpression(origin) {
         .replace(/\bOR\b/g, '||');
 }
 
+function mix(target, source) {
+    if (typeof target !== 'object' && target !== null) {
+        return source;
+    }
+
+    return Object.assign(target, source);
+}
+
+function compileCondition(condition) {
+    let conditionReg = /([^<>=]+)\s?([<>=!]{1,2})\s?(.+)/;
+    let conditionArray = conditionReg.exec(condition).slice(1, 4);
+
+    conditionArray[0] = conditionArray[0].replace('resource.','');
+
+    return conditionArray;
+}
+
+function calculateCondition(expr, data) {
+    return (new Function('user', 'action', 'env', 'resource', 'return ' +
+        expr + ';'))(data.user, data.action, data.env, data.resource);
+}
+
+function prepareCondition(conditions, data) {
+    let result = {};
+    for(let condition of conditions) {
+        let rule = compileCondition(condition);
+        if (rule[1]==='=' || rule[1]==='=='){
+            result[rule[0]] = calculateCondition(rule[2], data);
+        } else { // todo ?
+            result[rule[0]] = [rule[1], rule[2]];
+        }
+    }
+    return result;
+}
+
+let property = Symbol();
+
 class Policy {
     _groupConstructor(origin) {
         this._expression = compileGroupExpression(origin);
@@ -119,31 +156,39 @@ class Policy {
             let {target, algorithm, effect} = origin.policies[key];
             this._policies[key] = compilePolicy(target, algorithm, effect);
         }
+        // todo this._condition =
     }
 
-    _singleConstructor(target, algorithm, effect) {
+    _singleConstructor(target, algorithm, effect, condition) {
         let uniqID = '_' + Math.random().toString(36).substr(2, 9);
         this._expression = 'data.' + uniqID;
         this._policies = {
             [uniqID]: compilePolicy(target, algorithm, effect)
         };
+
+        // todo
+        this._condition = condition;
     }
 
     _mergeConstructor(origin, source, effect) {
         this._expression = origin._expression + effect + source._expression;
-        this._policies = {};
-        Object.assign(this._policies, origin._policies, source._policies);
+        this._policies = Object.assign({}, origin._policies, source._policies);
+        // todo this._condition =
     }
 
-
     constructor(origin, source, effect) {
+        // todo add 'condition' part
+
         if ((origin.expression !== undefined) && (origin.policies !== undefined)) {
             this._groupConstructor(origin);
         } else if (source === undefined && effect === undefined) {
-            this._singleConstructor(origin.target, origin.algorithm, origin.effect);
+            this._singleConstructor(origin.target, origin.algorithm, origin.effect, origin.condition);
         } else {
             this._mergeConstructor(origin, source, effect);
         }
+
+        // private container for 'condition' part
+        this[property] = {};
     }
 
     check(user, action, env, resource) {
@@ -152,7 +197,25 @@ class Policy {
             result[key] = this._policies[key](user, action, env, resource);
         }
 
+        // save data for 'condition'
+        this[property] = {user, action, env, resource};
+
         return (new Function('data', 'return ' + this._expression + ';'))(result);
+    }
+
+    condition(user, action, env, resource) {
+        let result = {
+            user: mix(user, this[property].user),
+            action: mix(action, this[property].action),
+            env: mix(env, this[property].env ),
+            resource: mix(resource, this[property].resource)
+        };
+
+        result.condition = this._condition ? prepareCondition(this._condition, result) : undefined;
+
+        // clear private container
+        this[property] = {};
+        return result;
     }
 
     and(policy) {

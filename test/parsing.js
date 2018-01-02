@@ -158,7 +158,7 @@ describe("Parsing", function () {
         expect(policy.check(user, null, env)).to.equal(false);
     });
 
-    it(":empty target - permit", function () {
+    it(": empty target - permit", function () {
         let rules = {
             target: [
             ],
@@ -173,7 +173,7 @@ describe("Parsing", function () {
         expect(policy.check(user, null, env)).to.equal(true);
     });
 
-    it(":empty target - deny", function () {
+    it(": empty target - deny", function () {
         let rules = {
             target: [
             ],
