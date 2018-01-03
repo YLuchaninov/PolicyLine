@@ -32,21 +32,21 @@ Node.JS attribute based access control library
 > 
 > ```JSON
 > {
-  "target": [
-    "action.name='approve'",
-    "user.position='senior_manager'",
-    "user.department='purchasing_department'",
-    "user.approveLimit>user.approveTotal+action.transactionSum",
-    "action.transactionSum<100000"
-  ],
-  "condition": [
-    "resource.creator!=user.name",
-    "resource.branch=user.branch",
-    "resource.type='purchase_order'"
-  ],
-  "effect": "permit",
-  "algorithm": "all"
-}
+>  "target": [
+>    "action.name='approve'",
+>    "user.position='senior_manager'",
+>    "user.department='purchasing_department'",
+>    "user.approveLimit>user.approveTotal+action.transactionSum",
+>    "action.transactionSum<100000"
+>  ],
+>  "condition": [
+>    "resource.creator!=user.name",
+>    "resource.branch=user.branch",
+>    "resource.type='purchase_order'"
+>  ],
+>  "effect": "permit",
+>  "algorithm": "all"
+> }
 > ```
 > Эти правила вы можете загрузить, откомпилировать в функцию и использовать в мидлваре для ограничения доступа. Блока `condition`, представляет собой массив условий который динамически компилируеться(создается объект) в JSONB структуру из входных данных, который может быть использованн для дальнейшей фильтрации в [Mongoose](http://mongoosejs.com/docs/queries.html), [Sequelize](http://docs.sequelizejs.com/manual/tutorial/querying.html#jsonb) или для написания кастомной логики.
 
