@@ -152,7 +152,7 @@ describe("Dependency Injection", function () {
         expect(policy.check(user)).to.equal(false);
     });
 
-    it.only(": register whole function", function () {
+    it(": register whole function", function () {
 
         DI.register('$intersect', function (a, b) {
             return a.filter((n) => b.includes(n)).length;
