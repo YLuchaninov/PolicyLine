@@ -152,6 +152,26 @@ describe("Dependency Injection", function () {
         expect(policy.check(user)).to.equal(false);
     });
 
+    it.only(": register whole function", function () {
+
+        DI.register('$intersect', function (a, b) {
+            return a.filter((n) => b.includes(n)).length;
+        });
+        
+        let rules = {
+            target: [
+                "$intersect([group'], ['group'])"
+            ],
+            effect: "permit",
+            algorithm: "all"
+        };
+
+        let policy = new Policy(rules);
+        let user = {name: 'test_Joe'};
+
+        expect(policy.check(user)).to.equal(true);
+    });
+
     afterEach(function () {
         DI.clear();
     });
