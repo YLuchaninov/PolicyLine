@@ -160,7 +160,7 @@ describe("Dependency Injection", function () {
         
         let rules = {
             target: [
-                "$intersect([group'], ['group'])"
+                "$intersect(['group'], ['group'])"
             ],
             effect: "permit",
             algorithm: "all"
