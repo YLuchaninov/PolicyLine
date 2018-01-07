@@ -9,11 +9,14 @@ const settings = {
 function compileRule(rule) {
     let ruleReg = /([^<>=]+)\s?([<>=!]{1,2})\s?(.+)/;
     try {
-        let ruleArray = ruleReg.exec(rule).slice(1, 4);
-        if (ruleArray[1] === '=' || ruleArray[1] === '==') {
-            ruleArray[1] = '==='
+        let ruleArray = ruleReg.exec(rule);
+        if (ruleArray) {
+            ruleArray = ruleArray.slice(1, 4);
+            if (ruleArray[1] === '=' || ruleArray[1] === '==') {
+                ruleArray[1] = '==='
+            }
+            rule = ruleArray.join('');
         }
-        rule = ruleArray.join('');
 
         // DI section
         let di = '';
