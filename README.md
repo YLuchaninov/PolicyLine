@@ -1,35 +1,40 @@
+
 # PolicyLine
 Node.JS attribute based access control library
 
-> This is a pre-alpha version(Concept approval). We will write full english documentation after implementation of demo projects.
+> This is a pre-alpha version.
 
-## Что это
+Original Russian documentation [here](./README.ru.md)
 
-Библиотека реализующая ABAC(Attribute Based Access Control) для серверов на Node.JS. 
 
-Более подробно можно почитать:
+## What is it
 
-* [Подходы к контролю доступа: RBAC vs. ABAC](https://habrahabr.ru/company/custis/blog/248649/)
-* [Знакомство с XACML — стандартом для Attribute-Based Access Control](https://habrahabr.ru/company/custis/blog/258861/)
+The library that implements ABAC (Attribute Based Access Control) for servers on Node.JS.
+
+More details here:
+
+* [Approaches to access control: RBAC vs. ABAC](https://habrahabr.ru/company/custis/blog/248649/)
+* [Familiarity with the XACM standard for Attribute-Based Access Control](https://habrahabr.ru/company/custis/blog/258861/)
 * [Attribute-based access control(Wiki)](https://en.wikipedia.org/wiki/Attribute-based_access_control)
 * [Guide to Attribute Based Access Control (ABAC)](http://nvlpubs.nist.gov/nistpubs/specialpublications/NIST.sp.800-162.pdf)
 
-## Зачем
+## Purpose
 
-Необходим инструмент для изменения бизнес правил касаемо доступа, без переписывания серверного кода.
+A tool is needed to change the business rules regarding access, without rewriting the server code.
 
-### Отличия от других библиотек:
 
-1. Правила основаны на атрибутах, а не на ролях, что избавляет вас от необходимости введения механизма разрешений(пермишенов).
-2. Позволяет динамически менять правила доступа на основе атрибутов без изменения кода приложения(без переписывания), так как все бизнес правила задаются в формате JSON.
-3. В отличии от других библиотек, в бизнес правила включены не только правила доступа, но и возможность динамической фильтрации.
+### Differences from other libraries:
 
-Что, фактически **позволяет вам настраивать бизнес логику приложения без изменения кода самого приложения**.
+1. Rules are based on attributes, not roles, which saves you from having to introduce permissions (permissions).
+2. Allows you to dynamically change access rules based on attributes without changing the application code (without rewriting), since all business rules are specified in the JSON format.
+3. Unlike other libraries, business rules include not only access rules, but also the ability to dynamically filter.
 
-> Например, бизнес правило: **"*Старший менеджер из отдела закупок может подтверждать заказы на покупку, только если он не создатель заказа, заказ находиться в его филиале, стоимость заказа больше 100000, и не превышает лимит заказов на день*"**.
-> 
-> В этом случае правила приобретают вид:
-> 
+This **allows you to configure the business logic of the application without changing the code of the application itself**.
+
+> For example, a business rule: **"The senior manager from the purchasing department can confirm purchase orders only if he is not the creator of the order, the order is in his branch, the order value is more than 100,000, and does not exceed the daily limit."**
+>
+> In this case, the rules become:
+>
 > ```JSON
 > {
 >  "target": [
@@ -48,74 +53,75 @@ Node.JS attribute based access control library
 >  "algorithm": "all"
 > }
 > ```
-> Эти правила вы можете загрузить, откомпилировать в функцию и использовать в мидлваре для ограничения доступа. Блока `condition`, представляет собой массив условий который динамически компилируеться(создается объект) в JSONB структуру из входных данных, который может быть использованн для дальнейшей фильтрации в [Mongoose](http://mongoosejs.com/docs/queries.html), [Sequelize](http://docs.sequelizejs.com/manual/tutorial/querying.html#jsonb) или для написания кастомной логики.
+> You can load or compile these rules into a function and use in the middleware to restrict access. A block `condition` is an array of conditions that are dynamically compiled (an object is created) into a JSONB structure from input data that can be used for further filtering in [Mongoose](http://mongoosejs.com/docs/queries.html), [Sequelize](http://docs.sequelizejs.com/manual/tutorial/querying.html#jsonb) writing custom logic.
 
 ## API
-Библиотека оперирует с четырьмя сущностями:
+The library operates with four entities:
 
-* `user` - объект пользователя, предоставляет информацию по каждому уникальному пользователю. Как правило в `express` внедряется в запрос как поле. 
-* `action` - информация непосредственно о совершаемом действии. Может быть внедрена при конструировании мидлваре как мета информация.
-* `env` - информация об окружении, содержащая как правило время и другую необходимую информацию.
-* `resource` - объект с которым необходимо произвести действия. Так как с ресурсом необходимо как правило работать с отдельно, то желательно все взаимодействие вынести в блок `condition`, что позволит получать динамически создаваемые объекты(JSONB) с условиями, которые могут быть использованны для дальнейшей работы с ресурсами в [Mongoose](http://mongoosejs.com/docs/queries.html), [Sequelize](http://docs.sequelizejs.com/manual/tutorial/querying.html#jsonb) или для написания кастомной логики.
+* `user`- user object, provides information on each unique user. Typically, it is `express` embedded in the query as a field.
+* `action`- information directly about the action being taken. Can be implemented in the construction of middleware as meta information.
+* `env` - information about the environment, which usually contains time and other necessary information.
+* `resource`- an object with which to perform actions. Since it is usually necessary to work with the resource separately, it is desirable to bring all the interaction to a block `condition`, which will allow receiving dynamically created objects (JSONB) with conditions that can be used to further work with resources in [Mongoose](http://mongoosejs.com/docs/queries.html), [Sequelize](http://docs.sequelizejs.com/manual/tutorial/querying.html#jsonb)  or for writing custom logic.
 
 
 ### Policy
-Объект с помощью которого проверяются доступ, и вычисляются условия.
+
+The object by which access is checked, and conditions are calculated.
+
+
 
 #### new Policy(`rules`)
 
-Создает новую политику из правил. Во время создания политики, происходит компиляция правил в чистые функции.
+Creates a new policy from the rules. During policy creation, rules are compiled into pure functions.
 
 ```js
-let policy = new Policy(rules);
+let policy = new Policy (rules);
 ```
 
-Правила могут быть записаны в двух форматах:
+Rules can be written in two formats:
 
-##### В формате "Single Policy":
-
+### In the format of "Single Policy":
 ```js
 let rules = {
     target: [
-        "user.location='NY'"
+        "user.location = 'NY'"
     ],
     effect: "permit",
     algorithm: "all",
-    condition:[
-    	 "resource.location=user.location"
+    condition: [
+    	"resource.location = user.location"
     ]
-};
+};};
 
-let policy = new Policy(rules);
+let policy = new Policy (rules);
 ```
+Where fields:
 
-Где поля:
+`target`- A set of logical conditions for calculating the policy, each condition returns `true`, `false` or an error if an exception occurs. It may comprise any logical condition (`=`, `!=`, `<`, `>`, `>=`, `<=`). Expressions `==` and `=` unambiguous. On both sides of the expression can be present the simplest logical or algebraic expressions, as well as calls of synchronous functions embedded with the help of DI(Dependency Injection) function.
 
-* `target` - набор логических условий для вычисления политики, каждое условие возвращает `true`, `false` или ошибку в случае возникновения исключения. Может содержать любое логическое условие (`=`, `!=`, `<`, `>`, `>=`, `<=`). Выражения `==` и `=` однозначны. С обоих сторон выражения могут присутствовать простейшие логические или алгебраические выражения, а также вызовы синхронных функций, внедренных с помощью `DI`(Dependency Injection) функционала.
-
-> Примеры валидных условий: 
-> 
+> Examples of valid conditions:
+>
 >  - `user.value>=3000`
 >  - `user.value<=(3000-2000)*env.value`
 >  - `$timeBetween($moment(env.time, 'HH:mm a').format('HH:mm a'),'9:00','18:00')=true`
-> 
-> Так как последнее условие является достаточно трудным для понимания, постарайтесь избегать таких ситуаций. Проще написать новую функцию, например `$time(env.time).between('9:00','18:00')=true` (данный пример просто демонстрация возможностей, и не содержиться в helper функциях(пресетах))
+>
+> Since the last condition is difficult enough to understand, try to avoid such situations. It's easier to write a new function, for example `$time(env.time).between('9:00','18:00')=true` (this example is just a demonstration of features, and not contained in helper functions (presets))
 
-* `algorithm` - алгоритм по которому вычисляется политика по правилам, может принимать значение ***all*** или ***any***, в случае ***all*** все правило должны вернуть `true`, в случае ***any*** - любое. По умолчанию - ***all***.
-* `effect` - эффект, который накладывают на результаты вычисления политики. Может принимать значения ***permit*** или ***deny***. По умолчанию - ***deny***. Если после вычисления правил и применения алгоритма, получено `true`, то накладывается эффект, и политика возвращает `true` если разрешено или `false` если запрещено, или в ходе вычисления политики произошла ошибка или использовано неизвестное значение.
+* `algorithm`- The algorithm by which the policy is calculated by the rules, can take the value of ***all*** or ***any*** , in case ***all*** all the rules should return `true`, in the case of ***any*** - at least one of the rules should return `true`. The default is ***all***.
+* `effect` - the effect that is imposed on the results of the calculation of the policy. It can take a permit or deny value . The default is ***deny*** . If after the calculation of the rules and the application of the algorithm is obtained true, then the effect is imposed, and the policy returns `true` if it is allowed or `false` if it is forbidden, or an error occurred during the calculation of the policy or an unknown value was used.
 
-> Обратите внимание, на то, что если в ходе вычисления политики произойдет **ошибка**, то **политика всегда вернет `false`, то есть запретит доступ к ресурсу**!
+> Note that if an error occurs during the calculation of the policy , **the policy will always return `false`, that is, deny access to the resource***!
 >
 
-* `condition` - набор условий для доступа к ресурсу. При вызове метода `condition`, возвращает динамически скомпилированный объект условий. Формат записи отличается от формата записи `target`. Левой части выражения допустимы только символы из набора `[\w\.\'\"\$]+`, то есть имена объектов, их атрибуты и кавычки. Рекомендуется формировать условия следующим образом: `resource.attribute[.attribute]|condition|expression`, более подробно в описании метода `condition `
+* `condition` - A set of conditions for accessing the resource. When a method is called `condition`, it returns a dynamically compiled condition object. The recording format differs from the recording format `target`. The left part of the expression is only allowed by the characters in the set `[\w\.\'\"\$]+`, that is, the names of the objects, their attributes and quotes. It is recommended to formulate the conditions as follows: `resource.attribute[.attribute]|condition|expression`, in more detail in the description of the method `condition `
 
-##### В формате "Policy Group":
+##### In the format "Policy Group":
 
 ```js
 // all algorithms set in 'all' by default
 // 'condition' is empty
-let policyGroup = { 
-    expression: '(user AND location)OR(admin OR super_admin)',
+let policyGroup = {
+    expression: '(user AND location) OR (admin OR super_admin)',
     policies: {
         user: {
             target: [
@@ -147,17 +153,17 @@ let policyGroup = {
 let policy = new Policy(rules);
 ```
 
-Где поля:
+Where fields:
 
-* `expression` - логическое выражение с помощью которого составляют политика, где имена политик это название атрибутов в объекте `policies`.
-* `policies` - Перечень политик в группе.
+* `expression` - the logical expression by which the policy is composed, where the names of policies are the name of the attributes in the object `policies`.
+* `policies` - List of policies in the group.
 
-> Обратите внимание что `condition` в случае группы политик должны быть записаны отдельно, на одном уровне вместе с `expression` и `policies`, а не в каждой политике отдельно. Это сделано для того что группа политик все равно будет применяться к одному ресурсу, соответственно условия должны быть одинаковы.
+> Note that `condition` in the case of a group of `policies`, they must be written separately, at the same level as `expression` and `policies`, and not in each policy separately. This is done so that the group of policies will still apply to the same resource, so the conditions should be the same.
 
 
 #### check(`user`, `action`, `env`, `resource`)
 
-Метод для вычисления политики, возвращает `true` `false` на основании вычисления правил с переданными параметрами, и применения к результату вычисления `algorithm` и `effect`.
+The method for calculating the policy returns, `true` `false` based on the calculation of the rules with the parameters transferred, and the application to the calculation result `algorithm` and `effect`.
 
 ```js
 let rules = {
@@ -175,53 +181,55 @@ policy.check(user) // <= true
 
 #### and(`policy`)
 
-Комбинирует текущую политику с переданной, с помощью булевой операции `AND` и возвращает как результат новую.
+Combines the current policy with the transferred one, using a Boolean operation, `AND` and returns a new one as a result.
 
 ```js
 let totalPolicy = policyA.and(policyB).and(policyC);
 ```
 
 #### or(`policy`)
-Комбинирует текущую политику с переданной, с помощью булевой операции `OR` и возвращает как результат новую.
+Combines the current policy with the transferred one, using a Boolean operation, `OR` and returns a new one as a result.
 
 ```js
 let totalPolicy = adminPolicy.or(userPolicy.and(locationPolicy));
 ```
 
-#### condition(`user`, `action`, `env`, `resource`)
 
-Метод позволяет, компилировать условия с учетов параметров `user`, `action`, `env`, `resource` текущих (переданных непосредственно в метод) и предыдущих, которые были использованы в методе `check` то есть в момент получения доступа к текущему ресурсу.
-Метод возвращает динамически созданный объект с вычисленными значениями атрибутов на основе параметров перечисленных ранее.
+#### condition (`user`,` action`, `env`,` resource`)
 
-То есть следующие условия:
+The method allows you to compile conditions using the `user`,` action`, `env`,` resource` parameters of the current (passed directly to the method) and previous ones, which were used in the `check` method, ie at the moment of access to the current resource .
+The method returns a dynamically generated object with the calculated attribute values ​​based on the parameters listed earlier.
+
+That is, the following conditions:
 
 ```js
 let rules = {
-	...
+...
     condition: [
-        "resource.name='post'",
-        "resource.location=user.location",
-        "resource.limit>=(user.total + user.operation)",
+        "resource.name = 'post'",
+        "resource.location = user.location",
+        "resource.limit >= (user.total + user.operation)",
     ]
-};
+};};
 ```
-при том что при проверке(`check` *and*|*or* `condition `) были использованы следующие параметры:
+while the following parameters were used during the check (`check` *and* | *or*` condition `):
 
 ```js
 let user = {location: 'NY', operation: 10, total: 120};
 ```
-Вернут следующий объект с вычисляемыми полями, который можно использовать в запросе, или для написания дополнительной логики.
+The following object with computable fields is returned, which can be used in the query, or for writing additional logic.
 
 ```js
 let condition = {
     name: 'post',
     location: 'NY',
     limit: ['>=', 130]
-};
+};};
 ```
-> Обратите внимание на условие `resource.limit>=(user.total + user.operation)` оно вернуло нам массив первым элементом которого идет условие, вторым вычисленное значение. Такие случаи вы должны описывать и обрабатывать самостоятельно. Некоторые базы данных позволяют вам использовать алиасы операций, например как [Sequelize](http://docs.sequelizejs.com/manual/tutorial/querying.html#jsonb), или формат JSONB  как [Mongoose](http://mongoosejs.com/docs/queries.html). Пример таких условий и сгенерированный объект будет приведен ниже:
 
-Пример условий с условиями запроса:
+> Pay attention to the condition `resource.limit >= (user.total + user.operation)`. It returns an array where the first element is the condition and the second computed is the value. Such cases you must describe and process yourself. Some databases allow you to use operation aliases, for example as [Sequelize](http://docs.sequelizejs.com/manual/tutorial/querying.html#jsonb), or JSONB format as [Mongoose](http://mongoosejs.com/docs/queries.html). An example of such conditions and the generated object will be given below:
+
+Example of conditions with the query conditions:
 
 ```js
 let policyGroup = { // all algorithms set in 'all' by default
@@ -248,18 +256,16 @@ let result = {
     likes: {$in: ['vaporizing', 'talking']}
 };
 ```
-
-> **Обратите внимание что необходимость безопасности никто не отменял, поэтому необходимо правильно валидировать входные данные от клиента с учетом алиасов команд баз данных.**  
+> **Please note that no one has canceled the need for security, so you must correctly validate the input from the client, taking into account the aliases of the database commands.**
 
 
 ### DI
 
-В выражениях(`target` и `condition`) можно использовать свои функции, которые внедряют с помощью механизма "Dependency Injection".
+In expressions (`target` and` condition`) you can use your own functions, which are implemented using the "Dependency Injection" mechanism.
 
-#### register(fnName, fn), register(fn)
+#### register (fnName, fn), register (fn)
 
-Регистрирует функцию по имени или не анонимную, которую в дальнейшем можно использовать в выражениях.
-
+Registers a function by name or not anonymous, which can later be used in expressions.
 ```js
 DI.register('$test', function (value) {
     return 'test_' + value;
@@ -271,35 +277,34 @@ let rules = {
     ]
 };
 ```
+#### unregister (fnName, fn), unregister (fn)
 
-#### unregister(fnName, fn), unregister(fn)
-
-Удаляет зарегистрированную не анонимную функцию или по ее имени.
-
+Deletes a registered non-anonymous function or by its name.
 ```js
  DI.unregister('$test');
 ```
 
-#### clear()
+#### clear ()
 
-Удаляет все зарегистрированные функция включая пресеты для обработки строк и времени.
+Removes all registered functions including presets for processing strings and times.
 
 ```js
  DI.clear();
 ```
 
-#### loadPresets()
+#### loadPresets ()
 
-Загружает все включенные в библиотеку вспомогательные функции. В данный момент, доступна работа со строками и временем, в будущем планируется реализация работы с *geohash* и расширение существующих.
+Loads all auxiliary functions included in the library. At the moment, work with lines and time is available, in the future it is planned to implement the work with * geohash * and the extension of existing ones.
 
 ```js
  DI.loadPresets();
 ```
 
+
 ### Settings
 
-Объект с настройками, в данный момент, позволяет отменить вывод в консоль ошибки при выполнении условий политик.
-> Как уже было упомянуто выше, при возникновении ошибки или исключения, во время вычисления политики, политика всегда вернет вам запрет доступа. Но при отладке, как правило важно видеть исключения произошедшие при расчете правил.
+The object with the settings, at the moment, allows you to cancel the output to the console of the error when the policy conditions are met.
+> As mentioned above, when an error or exception occurs, during policy calculation, the policy always returns you a deny of access. But when debugging, it is usually important to see the exceptions that occurred when calculating rules.
 
 ```js
 let ABAC = require('policyline');
@@ -309,9 +314,9 @@ ABAC.settings.log = false;
 ```
 
 
-## Безопасность
+## Security
 
-Несмотря на то что в библиотеке используется генерация javascript кода, она достаточно безопасна, при соблюдении следующих условий:
+Despite the fact that the library uses javascript code generation, it is quite safe, provided the following conditions are met:
 
-1. Доступ к бизнес правилам не имеют сторонние люди, чтобы исключить механизм инъекции.
-2. Входящие данные с клиента должны быть проваледированны с учетом всех алиасов команд баз данных.
+1. Restrict access to business rules has no outside people to exclude the mechanism of injection.
+2. The incoming data from the client must be validated taking into account all aliases of the database commands.
