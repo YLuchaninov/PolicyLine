@@ -4,12 +4,14 @@ Node.JS attribute based access control library
 
 > This is a pre-alpha version.
 
-Original Russian documentation [here](./README.ru.md)
+Original Russian documentation [here](./docs/README.ru.md)
 
 
 ## What is it
 
 The library that implements ABAC (Attribute Based Access Control) for servers on Node.JS.
+
+[![Attribute Based Access Control](./docs/imgs/video.png)](https://www.youtube.com/watch?v=cgTa7YnGfHA "Attribute Based Access Control")
 
 More details here:
 
