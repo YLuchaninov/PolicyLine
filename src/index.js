@@ -272,7 +272,8 @@ class Policy {
         this[property] = {};
 
         try {
-            result.condition = calculateCondition({}, this._condition, result);
+            let condition = calculateCondition({}, this._condition, result);
+            result.condition = mergeDeep(condition, result.resource);
         } catch (e) {
             result = e;
         }

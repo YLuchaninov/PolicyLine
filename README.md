@@ -228,6 +228,7 @@ let condition = {
     limit: ['>=', 130]
 };};
 ```
+That is, the method returns an object containing the fields `user`,` action`, `env`,` resource` and `condition`. And `resource` upon return will be integrated with` condition`, in order to get valid conditions for querying the database.
 
 > Pay attention to the condition `resource.limit >= (user.total + user.operation)`. It returns an array where the first element is the condition and the second computed is the value. Such cases you must describe and process yourself. Some databases allow you to use operation aliases, for example as [Sequelize](http://docs.sequelizejs.com/manual/tutorial/querying.html#jsonb), or JSONB format as [Mongoose](http://mongoosejs.com/docs/queries.html). An example of such conditions and the generated object will be given below:
 
