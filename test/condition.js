@@ -147,7 +147,8 @@ describe("Condition", function () {
             condition: {
                 name: 'post',
                 location: 'NY',
-                limit: ['>=', 130]
+                limit: ['>=', 130],
+                total: 120
             }
         });
     });
