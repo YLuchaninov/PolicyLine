@@ -119,7 +119,6 @@ function compileCondition(condition) {
     let conditionArray = conditionReg.exec(condition).slice(1, 4);
 
     conditionArray[0] = conditionArray[0].replace('resource.', '');
-
     return conditionArray;
 }
 
@@ -175,7 +174,7 @@ function prepareCondition(conditions) {
     return wrapNamespaces(result);
 }
 
-function calculateCondition(target, source, data) {
+function calculateCondition(target, source, data) { // todo .user
     for (let key in source) {
         if (Array.isArray(source[key])) {
             target[key] = [source[key][0]];
@@ -191,7 +190,7 @@ function calculateCondition(target, source, data) {
 }
 
 function isObject(item) {
-    return (item && typeof item === 'object' && !Array.isArray(item) && item !== null);
+    return (item && typeof item === 'object' && !Array.isArray(item) && item !== null && !(item instanceof RegExp));
 }
 
 function mergeDeep(target, source) {
@@ -209,36 +208,39 @@ function mergeDeep(target, source) {
 }
 
 let property = Symbol();
+let calcResult = Symbol();
 
 class Policy {
     _groupConstructor(origin) {
         this._expression = compileGroupExpression(origin);
-        this._policies = {};
+        this._targets = {};
+        this._conditions = {};
         for (const key in origin.policies) {
-            let {target, algorithm, effect} = origin.policies[key];
-            this._policies[key] = compilePolicy(target, algorithm, effect);
+            let {target, algorithm, effect, condition} = origin.policies[key];
+            this._targets[key] = compilePolicy(target, algorithm, effect);
+            this._conditions[key] = prepareCondition(condition || []);
         }
-        this._condition = prepareCondition(origin.condition || []);
     }
 
     _singleConstructor(target, algorithm, effect, condition) {
         let uniqID = '_' + Math.random().toString(36).substr(2, 9);
         this._expression = 'data.' + uniqID;
-        this._policies = {
+        this._targets = {
             [uniqID]: compilePolicy(target, algorithm, effect)
         };
-        this._condition = prepareCondition(condition || []);
+        this._conditions = {
+            [uniqID]: prepareCondition(condition || [])
+        };
     }
 
     _mergeConstructor(origin, source, effect) {
         this._expression = origin._expression + effect + source._expression;
-        this._policies = Object.assign({}, origin._policies, source._policies);
-        let tmp = mergeDeep({}, origin._condition);
-        this._condition = mergeDeep(tmp, source._condition);
+        this._targets = Object.assign({}, origin._targets, source._targets);
+        this._conditions = Object.assign({}, origin._conditions, source._conditions);
     }
 
     constructor(origin, source, effect) {
-        if ((origin.expression !== undefined) && (origin.policies !== undefined)) {
+        if (origin.policies !== undefined) {
             this._groupConstructor(origin);
         } else if (source === undefined && effect === undefined) {
             this._singleConstructor(origin.target, origin.algorithm, origin.effect, origin.condition);
@@ -252,18 +254,19 @@ class Policy {
 
     check(user, action, env, resource) {
         let result = {};
-        for (const key in this._policies) {
-            result[key] = this._policies[key](user, action, env, resource);
+        for (const key in this._targets) {
+            result[key] = this._targets[key](user, action, env, resource);
         }
 
         // save data for 'condition'
         this[property] = {user, action, env, resource};
+        this[calcResult] = result;
 
         return (new Function('data', 'return ' + this._expression + ';'))(result);
     }
 
     condition(user, action, env, resource) {
-        let result = {
+        let data = {
             user: mergeDeep(user, this[property].user),
             action: mergeDeep(action, this[property].action),
             env: mergeDeep(env, this[property].env),
@@ -272,13 +275,28 @@ class Policy {
         this[property] = {};
 
         try {
-            let condition = calculateCondition({}, this._condition, result);
-            result.condition = mergeDeep(condition, result.resource);
+            let conditions = {};
+            for (const key in this._conditions) {
+                conditions[key] = calculateCondition({}, this._conditions[key], data);
+            }
+
+            // todo ///////////////////
+            let array = Object.values(conditions);
+            let condition = {};
+
+            array.forEach((item) => {
+                mergeDeep(condition, item);
+            });
+
+            this[calcResult] = {};
+            /////////////////////////////////////////
+
+            data.condition = mergeDeep(condition, data.resource);
         } catch (e) {
-            result = e;
+            data = e;
         }
 
-        return result;
+        return data;
     }
 
     and(policy) {

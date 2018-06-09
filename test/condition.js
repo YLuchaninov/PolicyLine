@@ -246,13 +246,22 @@ describe("Condition", function () {
                     target: [
                         "user.role='user'"
                     ],
-                    effect: "permit"
+                    effect: "permit",
+                    condition: [
+                        "resource.occupation=/host/",
+                        "resource.age.$gt=17"
+                    ]
                 },
                 location: {
                     target: [
                         "user.location=env.location"
                     ],
-                    effect: "permit"
+                    effect: "permit",
+                    condition: [
+                        "resource.age.$lt=66",
+                        "'name.last'='Ghost'",
+                        "resource.likes.$in=['vaporizing', 'talking']",
+                    ]
                 },
                 admin: {
                     target: [
@@ -266,14 +275,7 @@ describe("Condition", function () {
                     ],
                     effect: "permit"
                 }
-            },
-            condition: [
-                "resource.occupation=/host/",
-                "resource.age.$gt=17",
-                "resource.age.$lt=66",
-                "'name.last'='Ghost'",
-                "resource.likes.$in=['vaporizing', 'talking']",
-            ]
+            }
         };
         // mongoose 'find' object from 'http://mongoosejs.com/docs/queries.html'
         let result = {
