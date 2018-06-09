@@ -1,20 +1,21 @@
-// based on https://www.barkweb.co.uk/blog/how-to-build-a-calculator-in-javascript
+/* based on https://www.barkweb.co.uk/blog/how-to-build-a-calculator-in-javascript */
 
+const operators = ['AND', 'OR', '(', ')'];
 const TYPE = {
     op: 'OP',
     val: 'VAL'
 };
 
-function createTokens(expression) {
-    const operators = ['AND', 'OR', '(', ')'];
-    const array = expression.split(/\s+|(?=\(|\))|\b/);
+function wrapToToken(item) {
+    return {
+        val: item,
+        type: operators.includes(item) ? TYPE.op : TYPE.val
+    }
+}
 
-    return array.map((item) => {
-        return {
-            val: item,
-            type: operators.includes(item) ? TYPE.op : TYPE.val
-        }
-    });
+function createTokens(expression) {
+    const array = expression.split(/\s+|(?=\(|\))|\b/);
+    return array.map(wrapToToken);
 }
 
 function infixToRPN(tokens) {
@@ -110,20 +111,11 @@ function evaluateRPN(tokens) {
 
     return stack.pop();
 }
-//
-// let expression = '(a) OR (    b AND( c OR d) )';
-// let data = {
-//     a: false,
-//     b: true,
-//     c: false,
-//     d: true
-// };
-//
-// // preliminary stage
-// let rpn = infixToRPN(createTokens(expression));
-//
-// // deferred stage
-// let tokens = fillTokens(rpn, data); // data injection
-// let result = evaluateRPN(tokens);
-//
-// console.log(result);
+
+export {
+    createTokens,
+    infixToRPN,
+    fillTokens,
+    evaluateRPN,
+    wrapToToken
+}

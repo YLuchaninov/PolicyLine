@@ -1,9 +1,15 @@
+import {
+    createTokens,
+    infixToRPN,
+    fillTokens,
+    evaluateRPN,
+    wrapToToken
+} from './expEval';
 import files from './DI/index';
 
 const namespace = 'abac_di';
-
 const settings = {
-    log: true
+    log: false
 };
 
 function compileRule(rule) {
@@ -101,19 +107,6 @@ function compilePolicy(target = [], algorithm = 'all', effect = 'deny') {
     }
 }
 
-function compileGroupExpression(origin) {
-    let re, expr = origin.expression;
-
-    for (const key in origin.policies) {
-        re = new RegExp('\\b' + key + '\\b', "g");
-        expr = expr.replace(re, 'data.' + key);
-    }
-
-    return expr
-        .replace(/\bAND\b/g, '&&')
-        .replace(/\bOR\b/g, '||');
-}
-
 function compileCondition(condition) {
     let conditionReg = /([\w\.\'\"\$]+)\s?([<>=!]{1,2})\s?(.+)/; // more stricter than 'target' regexp
     let conditionArray = conditionReg.exec(condition).slice(1, 4);
@@ -174,7 +167,7 @@ function prepareCondition(conditions) {
     return wrapNamespaces(result);
 }
 
-function calculateCondition(target, source, data) { // todo .user
+function calculateCondition(target, source, data) {
     for (let key in source) {
         if (Array.isArray(source[key])) {
             target[key] = [source[key][0]];
@@ -212,7 +205,8 @@ let calcResult = Symbol();
 
 class Policy {
     _groupConstructor(origin) {
-        this._expression = compileGroupExpression(origin);
+        this._expression = infixToRPN(createTokens(origin.expression));
+
         this._targets = {};
         this._conditions = {};
         for (const key in origin.policies) {
@@ -223,8 +217,9 @@ class Policy {
     }
 
     _singleConstructor(target, algorithm, effect, condition) {
-        let uniqID = '_' + Math.random().toString(36).substr(2, 9);
-        this._expression = 'data.' + uniqID;
+        let uniqID = Math.random().toString(36).substr(2, 9);
+
+        this._expression = [wrapToToken(uniqID)];
         this._targets = {
             [uniqID]: compilePolicy(target, algorithm, effect)
         };
@@ -233,8 +228,8 @@ class Policy {
         };
     }
 
-    _mergeConstructor(origin, source, effect) {
-        this._expression = origin._expression + effect + source._expression;
+    _mergeConstructor(origin, source, operation) {
+        this._expression = origin._expression.concat(source._expression, wrapToToken(operation));
         this._targets = Object.assign({}, origin._targets, source._targets);
         this._conditions = Object.assign({}, origin._conditions, source._conditions);
     }
@@ -260,12 +255,16 @@ class Policy {
 
         // save data for 'condition'
         this[property] = {user, action, env, resource};
-        this[calcResult] = result;
+        this[calcResult] = evaluateRPN(fillTokens(this._expression, result));
 
-        return (new Function('data', 'return ' + this._expression + ';'))(result);
+        return this[calcResult].res;
     }
 
     condition(user, action, env, resource) {
+        if (!this[calcResult].res) {
+            return;
+        }
+
         let data = {
             user: mergeDeep(user, this[property].user),
             action: mergeDeep(action, this[property].action),
@@ -275,36 +274,33 @@ class Policy {
         this[property] = {};
 
         try {
-            let conditions = {};
+            let conditions = {}, condition = {};
             for (const key in this._conditions) {
                 conditions[key] = calculateCondition({}, this._conditions[key], data);
             }
 
-            // todo ///////////////////
-            let array = Object.values(conditions);
-            let condition = {};
-
+            let array = Object.entries(conditions);
             array.forEach((item) => {
-                mergeDeep(condition, item);
+                if(this[calcResult].val.includes(item[0])){
+                    mergeDeep(condition, item[1]);
+                }
             });
-
-            this[calcResult] = {};
-            /////////////////////////////////////////
 
             data.condition = mergeDeep(condition, data.resource);
         } catch (e) {
             data = e;
         }
+        this[calcResult] = {};
 
         return data;
     }
 
     and(policy) {
-        return new Policy(this, policy, '&&');
+        return new Policy(this, policy, 'AND');
     }
 
     or(policy) {
-        return new Policy(this, policy, '||');
+        return new Policy(this, policy, 'OR');
     }
 }
 
