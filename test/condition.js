@@ -44,6 +44,70 @@ describe("Condition", function () {
         });
     });
 
+    it(": compile complex & inner rules", function () {
+        let rules = {
+            effect: "permit",
+            condition: [
+                "resource.$or=[{status:'A'},{qty:{$lt:30}}]"
+            ]
+        };
+
+        let policy = new Policy(rules);
+        let user = {location: 'NY'};
+
+        policy.check(user);
+        let condition = policy.condition().condition;
+
+        expect(condition).to.deep.own.include({
+            "$or": [
+                {
+                    "status": "A"
+                },
+                {
+                    "qty": {
+                        "$lt": 30
+                    }
+                }
+            ]
+        });
+    });
+
+    it(": compile complex & inner rules", function () {
+        let rules = {
+            effect: "permit",
+            condition: [
+                "resource.$or='A'",
+                "resource.$or={status:'A'}",
+                "resource.$or={status:'B'}",
+                "resource.$or={qty:{$gt:30, $lt:50}}"
+            ]
+        };
+
+        let policy = new Policy(rules);
+        let user = {location: 'NY'};
+
+        policy.check(user);
+        let condition = policy.condition().condition;
+
+        expect(condition).to.deep.own.include({
+            "$or": [
+                'A',
+                {
+                    "status": "A"
+                },
+                {
+                    "status": "B"
+                },
+                {
+                    "qty": {
+                        "$gt": 30,
+                        "$lt": 50
+                    }
+                }
+            ]
+        });
+    });
+
     it(": compile operation", function () {
         let rules = {
             effect: "permit",
@@ -219,7 +283,10 @@ describe("Condition", function () {
                     target: [
                         "user.role='admin'"
                     ],
-                    effect: "permit"
+                    effect: "permit",
+                    condition: [
+                        "resource.test='test'"
+                    ]
                 },
                 super_admin: {
                     target: [

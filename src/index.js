@@ -157,11 +157,21 @@ function wrapNamespaces(obj) {
 function prepareCondition(conditions) {
     let result = {};
     for (let condition of conditions) {
-        let rule = compileCondition(condition);
+        let tmp, rule = compileCondition(condition);
         if (rule[1] === '=' || rule[1] === '==') {
-            result[rule[0]] = createCondition(rule[2]);
+            tmp = createCondition(rule[2]);
         } else {
-            result[rule[0]] = [rule[1], createCondition(rule[2])];
+            tmp = [rule[1], createCondition(rule[2])];
+        }
+
+        if (result[rule[0]] === undefined) {
+            result[rule[0]] = tmp;
+        } else {
+            if (!Array.isArray(result[rule[0]])) {
+                result[rule[0]] = [result[rule[0]]];
+                result[rule[0]].flag = true; // notification flag
+            }
+            result[rule[0]].push(tmp);
         }
     }
     return wrapNamespaces(result);
@@ -169,11 +179,16 @@ function prepareCondition(conditions) {
 
 function calculateCondition(target, source, data) {
     for (let key in source) {
-        if (Array.isArray(source[key])) {
+        if (Array.isArray(source[key]) && !source[key].flag) {
             target[key] = [source[key][0]];
             target[key].push(source[key][1](data.user, data.action, data.env, data.resource));
         } else if (typeof source[key] === 'function') {
-            target[key] = source[key](data.user, data.action, data.env, data.resource)
+            target[key] = source[key](data.user, data.action, data.env, data.resource);
+        } else if (Array.isArray(source[key])) {
+            target[key] = [];
+            for (let item of source[key]) {
+                target[key].push(item(data.user, data.action, data.env, data.resource));
+            }
         } else {
             target[key] = {};
             calculateCondition(target[key], source[key], data);
@@ -281,7 +296,7 @@ class Policy {
 
             let array = Object.entries(conditions);
             array.forEach((item) => {
-                if(this[calcResult].val.includes(item[0])){
+                if (this[calcResult].val.includes(item[0])) {
                     mergeDeep(condition, item[1]);
                 }
             });
