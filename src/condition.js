@@ -77,8 +77,12 @@ function calculateCondition(target, source, data) {
             target[key] = source[key](data.user, data.action, data.env, data.resource);
         } else if (Array.isArray(source[key])) {
             target[key] = [];
+            let result;
             for (let item of source[key]) {
-                target[key].push(item(data.user, data.action, data.env, data.resource));
+                result = item(data.user, data.action, data.env, data.resource);
+                if (result !== null && result !== undefined) {
+                    target[key].push(result);
+                }
             }
         } else {
             target[key] = {};
