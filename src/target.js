@@ -5,7 +5,7 @@ const settings = {
 };
 
 function compileTarget(rule) {
-    let ruleReg = /([^<>=]+)\s?([<>=!]{1,2})\s?(.+)/;
+    let ruleReg = /([^<>=!]+)\s?([<>=!]{1,2})\s?(.+)/;
     try {
         let ruleArray = ruleReg.exec(rule);
         if (ruleArray) {

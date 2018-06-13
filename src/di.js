@@ -1,12 +1,10 @@
 import files from "./external";
 
-const namespace = 'abac_di';
+const namespace = 'PolicyLine_DI';
 
 const DI = {
     register(name, fn) {
-        if (global[namespace] === undefined) {
-            global[namespace] = {};
-        }
+        global[namespace] = global[namespace] || {};
 
         if (typeof name === 'function') {
             global[namespace][name.name] = name;

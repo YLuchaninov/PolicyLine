@@ -1,5 +1,4 @@
 /* based on https://www.barkweb.co.uk/blog/how-to-build-a-calculator-in-javascript */
-
 const operators = ['AND', 'OR', '(', ')'];
 const TYPE = {
     op: 'OP',

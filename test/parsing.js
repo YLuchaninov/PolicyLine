@@ -98,7 +98,7 @@ describe("Parsing", function () {
     it(": !=", function () {
         let rules = {
             target: [
-                "user.value<=3000"
+                "user.value!=3000"
             ],
             effect: "permit",
             algorithm: "all"
