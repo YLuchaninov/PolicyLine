@@ -1,9 +1,9 @@
 import String from './string';
-import Location from './location';
+import Array from './array';
 import Time from './time';
 
 export default {
     String,
-    Location,
+    Array,
     Time
 }

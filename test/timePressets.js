@@ -23,7 +23,7 @@ describe("Time service functions", function () {
     it(": $timeBetween", function () {
         let rules = {
             target: [
-                "$timeBetween($moment(env.time, 'HH:mm a').format('HH:mm a'),'9:00','18:00')=true"
+                "$timeBetween($moment(env.time, 'HH:mm a').format('HH:mm a'),'9:00','18:00')"
             ],
             effect: "permit",
             algorithm: "all"
