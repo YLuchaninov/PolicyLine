@@ -86,7 +86,11 @@ class Policy {
         try {
             let conditions = {}, condition = {};
             for (const key in this._conditions) {
-                conditions[key] = calculateCondition({}, this._conditions[key], data);
+                try {
+                    conditions[key] = calculateCondition({}, this._conditions[key], data);
+                } catch (error) {
+                    // important to close error in calculate condition
+                }
             }
 
             let array = Object.entries(conditions);

@@ -198,24 +198,6 @@ describe("Condition", function () {
         expect(condition).to.deep.equal(result);
     });
 
-    it(": exception in calculation", function () {
-        let rules = {
-            effect: "permit",
-            condition: [
-                "resource.name='post'",
-                "resource.location=user.location"
-            ]
-        };
-
-        let policy = new Policy(rules);
-        policy.check();
-
-        // exception by user absent
-        let condition = policy.condition();
-
-        expect(condition instanceof Error).to.equal(true);
-    });
-
     it(": condition in policies composition", function () {
 
         let rulesA = {
