@@ -314,7 +314,7 @@ ABAC.settings.log = false;
 ```
 ## Example
 
-An example of project implementation can be found in [repository] (https://github.com/YLuchaninov/PolicyLine-demo).
+An example of project implementation can be found in [repository](https://github.com/YLuchaninov/PolicyLine-demo).
 
 ## Security
 
