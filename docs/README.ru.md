@@ -1,8 +1,6 @@
 # PolicyLine
 Node.JS attribute based access control library
 
-> This is a pre-alpha version(Concept approval). We will write full english documentation after implementation of demo projects.
-
 ## Что это
 
 Библиотека реализующая ABAC(Attribute Based Access Control) для серверов на Node.JS. 
@@ -228,11 +226,8 @@ let condition = {
 Пример условий с условиями запроса:
 
 ```js
-let policyGroup = { // all algorithms set in 'all' by default
-    expression: '(user AND location)OR(admin OR super_admin)',
-    policies: {
-        ...
-    },
+let policy = {
+    ...
     condition: [
         "resource.occupation=/host/",
         "resource.age.$gt=17",
@@ -253,7 +248,11 @@ let result = {
 };
 ```
 
-> **Обратите внимание что необходимость безопасности никто не отменял, поэтому необходимо правильно валидировать входные данные от клиента с учетом алиасов команд баз данных.**  
+> **Обратите внимание что необходимость безопасности никто не отменял, поэтому необходимо правильно валидировать входные данные от клиента с учетом алиасов команд баз данных.**
+
+В объектах PolicyGroup, производиться анализ выражения, и условия совмещаються только для тех политик которые привели к положительному решению.
+
+Если метод `check` вернул *false*, то вычесление условий не производиться.
 
 
 ### DI
@@ -312,6 +311,9 @@ let ABAC = require('policyline');
 ABAC.settings.log = false;
 ```
 
+## Пример
+
+Пример реализации проекта можно посмотреть в [репозитории](https://github.com/YLuchaninov/PolicyLine-demo).
 
 ## Безопасность
 

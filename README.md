@@ -2,10 +2,7 @@
 # PolicyLine
 Node.JS attribute based access control library
 
-> This is a pre-alpha version.
-
 Original Russian documentation [here](./docs/README.ru.md)
-
 
 ## What is it
 
@@ -235,11 +232,8 @@ That is, the method returns an object containing the fields `user`,` action`, `e
 Example of conditions with the query conditions:
 
 ```js
-let policyGroup = { // all algorithms set in 'all' by default
-    expression: '(user AND location)OR(admin OR super_admin)',
-    policies: {
-        ...
-    },
+let policy = { 
+    ...
     condition: [
         "resource.occupation=/host/",
         "resource.age.$gt=17",
@@ -261,6 +255,9 @@ let result = {
 ```
 > **Please note that no one has canceled the need for security, so you must correctly validate the input from the client, taking into account the aliases of the database commands.**
 
+In PolicyGroup objects, the expression is analyzed, and the conditions are combined only for those policies that led to a positive result.
+
+If the `check` method returns *false*, then the conditions are not calculated.
 
 ### DI
 
@@ -315,7 +312,9 @@ let ABAC = require('policyline');
 // disable errors notifications in console
 ABAC.settings.log = false;
 ```
+## Example
 
+An example of project implementation can be found in [repository] (https://github.com/YLuchaninov/PolicyLine-demo).
 
 ## Security
 
