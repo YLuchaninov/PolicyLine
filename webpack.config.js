@@ -1,46 +1,40 @@
-var path = require('path');
-var webpack = require('webpack');
+const path = require('path');
 
-var UglifyJsPlugin = webpack.optimize.UglifyJsPlugin;
-var env = process.env.WEBPACK_ENV;
-var libraryName = 'policyline';
-var plugins = [], outputFile;
-
-if (env === 'build') {
-    plugins.push(new UglifyJsPlugin({minimize: true}));
-    outputFile = libraryName + '.min.js';
-} else {
-    outputFile = libraryName + '.js';
-}
-
-module.exports = {
+module.exports = env => {
+  const isDev = env.mode === 'development';
+  return {
     entry: './src/index.js',
     output: {
-        path: path.resolve(__dirname, 'dist'),
-        filename: outputFile,
-        library: libraryName,
-        libraryTarget: 'commonjs2'
+      path: path.resolve(__dirname, 'dist'),
+      filename: `policyline${isDev ? '': '.min'}.js`,
+      library: 'policyline',
+      libraryTarget: 'commonjs2'
     },
     externals: {
-        moment: {
-            commonjs: 'moment',
-            commonjs2: 'moment'
-        }
+      moment: {
+        commonjs: 'moment',
+        commonjs2: 'moment'
+      }
     },
     module: {
-        loaders: [
-            {
-                test: /\.js$/,
-                loader: 'babel-loader',
-                query: {
-                    presets: ['es2015']
-                }
+      rules: [
+        {
+          test: /\.js$/,
+          use: [{
+            loader: 'babel-loader',
+            query: {
+              presets: ['es2015']
             }
-        ]
+          }]
+        }
+      ]
     },
     stats: {
-        colors: true
+      colors: true
     },
-    devtool: 'source-map',
-    plugins: plugins
+    devtool: isDev ? 'source-map' : undefined,
+    optimization: {
+      minimize: !isDev
+    }
+  };
 };
