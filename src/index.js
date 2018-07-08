@@ -1,128 +1,69 @@
-import {compilePolicy, settings} from './target';
-import {prepareCondition, calculateCondition} from './condition';
-import {
-    createTokens,
-    infixToRPN,
-    fillTokens,
-    evaluateRPN,
-    wrapToToken
-} from './expression';
-import {mergeDeep} from './utils';
-import {DI} from "./di";
+import {parseExp, executeExp} from './target';
 
-let property = Symbol();
-let calcResult = Symbol();
+let _property = Symbol(); // inner property name
 
 class Policy {
-    _groupConstructor(origin) {
-        this._expression = infixToRPN(createTokens(origin.expression));
 
-        this._targets = {};
-        this._conditions = {};
-        for (const key in origin.policies) {
-            let {target, algorithm, effect, condition} = origin.policies[key];
-            this._targets[key] = compilePolicy(target, algorithm, effect);
-            this._conditions[key] = prepareCondition(condition || []);
-        }
-    }
+    // static merge(expression, policies) {
+    //     // todo
+    // }
 
-    _singleConstructor(target, algorithm, effect, condition) {
-        let uniqID = Math.random().toString(36).substr(2, 9);
-
-        this._expression = [wrapToToken(uniqID)];
-        this._targets = {
-            [uniqID]: compilePolicy(target, algorithm, effect)
+    /**
+     * Create a Policy object by JSON rules.
+     * @param {object} jsonPolicy - Plain javascript object, which contain policy rules in JSON like structure.
+     */
+    constructor(jsonPolicy) {
+        // create hidden container for save any instance date
+        this[_property] = {
+            effect: jsonPolicy.effect !== 'deny',
+            target: []
         };
-        this._conditions = {
-            [uniqID]: prepareCondition(condition || [])
-        };
-    }
 
-    _mergeConstructor(origin, source, operation) {
-        this._expression = origin._expression.concat(source._expression, wrapToToken(operation));
-        this._targets = Object.assign({}, origin._targets, source._targets);
-        this._conditions = Object.assign({}, origin._conditions, source._conditions);
-    }
-
-    constructor(origin, source, effect) {
-        if (origin.policies !== undefined) {
-            this._groupConstructor(origin);
-        } else if (source === undefined && effect === undefined) {
-            this._singleConstructor(origin.target, origin.algorithm, origin.effect, origin.condition);
-        } else {
-            this._mergeConstructor(origin, source, effect);
+        // construction part
+        // if (jsonPolicy.expression) {
+        //     // todo
+        //     console.error('not implemented!');
+        // } else {
+        // todo
+        for (let expStr of jsonPolicy.target) {
+            this[_property].target.push(parseExp(expStr));
         }
-
-        // private container for 'condition' part
-        this[property] = {};
+        // }
     }
 
-    check(user, action, env, resource) {
-        let result = {};
-        for (const key in this._targets) {
-            result[key] = this._targets[key](user, action, env, resource);
+    /**
+     * Check params object by policy rules, which was setted in constructor.
+     * @param {object} param - Object should contain four objects as attributes:
+     * `user`, `action`, `env`, `resource`
+     *
+     * @returns {boolean} `true` in permit case, `false` in deny case.
+     */
+    check(data) {
+        const context = {}; // todo make context
+
+        let result = true;
+        for (let targetExp of this[_property].target) {
+            result = result && executeExp(data, targetExp, context);
+            if (!result) break;
         }
-
-        // save data for 'condition'
-        this[property] = {user, action, env, resource};
-        this[calcResult] = evaluateRPN(fillTokens(this._expression, result));
-
-        return this[calcResult].res;
+        return this[_property].effect ? result : !result;
     }
 
-    condition(user, action, env, resource) {
-        if (!this[calcResult].res) {
-            return;
-        }
+    // /**
+    //  * Function return object with condition.
+    //  * @param {object} adapter - Adapter, by default - for JSONB
+    //  * @returns {object}
+    //  */
+    // getConditions(adapter) {
+    //     return null;
+    // }
+    //
+    // getUsers({user, action, env, resource}) {
+    //     return null;
+    // }
 
-        let data = {
-            user: mergeDeep(user, this[property].user),
-            action: mergeDeep(action, this[property].action),
-            env: mergeDeep(env, this[property].env),
-            resource: mergeDeep(resource, this[property].resource)
-        };
-        this[property] = {};
-
-        try {
-            let conditions = {}, condition = {};
-            for (const key in this._conditions) {
-                try {
-                    conditions[key] = calculateCondition({}, this._conditions[key], data);
-                } catch (error) {
-                    // important to close error in calculate condition
-                }
-            }
-
-            let array = Object.entries(conditions);
-            array.forEach((item) => {
-                if (this[calcResult].val.includes(item[0])) {
-                    mergeDeep(condition, item[1]);
-                }
-            });
-
-            data.condition = mergeDeep(condition, data.resource);
-        } catch (e) {
-            data = e;
-        }
-        this[calcResult] = {};
-
-        return data;
-    }
-
-    and(policy) {
-        return new Policy(this, policy, 'AND');
-    }
-
-    or(policy) {
-        return new Policy(this, policy, 'OR');
-    }
 }
 
-// service DI
-DI.loadPresets();
-
 export {
-    Policy,
-    DI,
-    settings
+    Policy
 }
