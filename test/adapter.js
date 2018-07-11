@@ -93,5 +93,25 @@ describe("Adaptors Checking", function () {
         expect(policy.check(data)).to.equal(true);
     });
 
+    it(": Date mutations", function () {
+        let rules = {
+            target: [
+                'action.date..month>=6', // only at summer
+                'action.date..month<=8',
+                'action.date..weekday^=[6,7]', // only in work day
+                'action.date..hour>=21', // only after 21.30
+                'action.date..minute>30',
+            ]
+        };
+
+        let policy = new Policy(rules);
+        let data = {
+            action: {
+                date: 'Jul 11 2018 21:48:30 GMT+0300'
+            }
+        };
+
+        expect(policy.check(data)).to.equal(true);
+    });
 
 });

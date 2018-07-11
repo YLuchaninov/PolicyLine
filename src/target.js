@@ -64,13 +64,17 @@ function unwrapNamespace(data, namespace) {
 }
 
 function extract(data, operand, context) {
-    let value = operand.value;
+    let tmpContext, value = operand.value;
     if (operand.isDIObj) {
         value = unwrapNamespace(data, value)
     }
 
     for (let adapter of operand.adapters) {
-        value = adapters[adapter](value, context);
+        if (operand.isDIObj) {
+            context[operand.value] = context[operand.value] || {};
+            tmpContext = context[operand.value];
+        }
+        value = adapters[adapter](value, tmpContext);
     }
     return value;
 }
