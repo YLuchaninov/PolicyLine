@@ -1,8 +1,7 @@
-import operators from './operator';
-import mutations from './mutation';
+import {getOperators, registerOperator, unregisterOperator} from './operator';
+import {adapters} from './adapter';
 
-// just for development, not a strong expressions
-// todo change for checking
+// todo change to more stronger RegExp
 const leftRegExp = /\.{1,2}|\w*/;
 const rightRegExp = /[^\n]+/;
 
@@ -10,7 +9,7 @@ const quote = '\'';
 
 function throwSemanticError(expr) {
     const msg = `Semantic Error in ${expr}: 
-    Expression should be obj.attr[..mutation](operator)value or object.attribute
+    Expression should be obj.attr[..adapter](operator)value or object.attribute
     (user.role~=['admin','user'] , resource.location..radius=100)`;
     throw new Error(msg);
 }
@@ -32,7 +31,7 @@ function unwrapString(str) {
 
 function parseOperand(operandStr) {
     const array = operandStr.split('..');
-    const mutations = array.slice(1, array.length);
+    const adapters = array.slice(1, array.length);
     const isDIObj = isObjWithAttr(array[0]);
     let value;
 
@@ -46,7 +45,7 @@ function parseOperand(operandStr) {
     return {
         isDIObj,
         value,
-        mutations
+        adapters
     };
 }
 
@@ -70,13 +69,14 @@ function extract(data, operand, context) {
         value = unwrapNamespace(data, value)
     }
 
-    for (let mutation of operand.mutations) {
-        value = mutations[mutation](value, context);
+    for (let adapter of operand.adapters) {
+        value = adapters[adapter](value, context);
     }
     return value;
 }
 
 function parseExp(expStr) {
+    const operators = getOperators();
     let operator, parts;
     for (operator in operators) {
         parts = expStr.split(operator);
@@ -96,10 +96,21 @@ function parseExp(expStr) {
 }
 
 function executeExp(data, exp, context) {
-    return operators[exp.operator](extract(data, exp.left, context), extract(data, exp.right, context));
+    const operators = getOperators();
+    const leftOperand = extract(data, exp.left, context);
+    const rightOperand = extract(data, exp.right, context);
+    let path = '*';
+
+    if (exp.left.isDIObj && typeof operators[exp.operator][exp.left.value] === 'function') {
+        path = exp.left.value
+    }
+
+    return operators[exp.operator][path](leftOperand, rightOperand);
 }
 
 export {
     parseExp,
-    executeExp
+    executeExp,
+    registerOperator,
+    unregisterOperator
 }

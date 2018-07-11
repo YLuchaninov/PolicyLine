@@ -1,4 +1,4 @@
-import {parseExp, executeExp} from './target';
+import {parseExp, executeExp, registerOperator, unregisterOperator} from './target';
 
 let _property = Symbol(); // inner property name
 
@@ -33,7 +33,7 @@ class Policy {
 
     /**
      * Check params object by policy rules, which was setted in constructor.
-     * @param {object} param - Object should contain four objects as attributes:
+     * @param {object} data - Object should contain four objects as attributes:
      * `user`, `action`, `env`, `resource`
      *
      * @returns {boolean} `true` in permit case, `false` in deny case.
@@ -65,5 +65,7 @@ class Policy {
 }
 
 export {
-    Policy
+    Policy,
+    registerOperator,
+    unregisterOperator
 }

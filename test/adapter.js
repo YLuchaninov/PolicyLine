@@ -3,7 +3,7 @@ let ABAC = require('../dist/policyline.min');
 
 let Policy = ABAC.Policy;
 
-describe("Mutations Checking", function () {
+describe("Adaptors Checking", function () {
     it(": left side lowercase", function () {
         let rules = {
             target: [
