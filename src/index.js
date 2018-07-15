@@ -41,11 +41,21 @@ class Policy {
     check(data) {
         const context = {}; // todo make context
 
-        let result = true;
+        let key, tmp, results = {};
         for (let targetExp of this[_property].target) {
-            result = result && executeExp(data, targetExp, context);
-            if (!result) break;
+            key = Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+            tmp = executeExp(data, targetExp, context, key);
+            if (typeof tmp === 'boolean') {
+                results[key] = tmp;
+            } else {
+                Object.assign(results, tmp);
+            }
         }
+
+        let result = true;
+        Object.values(results).forEach((value) => {
+            result = result && value;
+        });
         return this[_property].effect ? result : !result;
     }
 

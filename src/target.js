@@ -1,5 +1,5 @@
 import {getOperators, registerOperator, unregisterOperator} from './operator';
-import {adapters} from './adapter';
+import {mutators, prefix, postfix} from './mutator';
 
 // todo change to more stronger RegExp
 const leftRegExp = /\.{1,2}|\w*/;
@@ -9,7 +9,7 @@ const quote = '\'';
 
 function throwSemanticError(expr) {
     const msg = `Semantic Error in ${expr}: 
-    Expression should be obj.attr[..adapter](operator)value or object.attribute
+    Expression should be obj.attr[..mutator](operator)value or object.attribute
     (user.role~=['admin','user'] , resource.location..radius=100)`;
     throw new Error(msg);
 }
@@ -31,7 +31,7 @@ function unwrapString(str) {
 
 function parseOperand(operandStr) {
     const array = operandStr.split('..');
-    const adapters = array.slice(1, array.length);
+    const mutators = array.slice(1, array.length);
     const isDIObj = isObjWithAttr(array[0]);
     let value;
 
@@ -45,7 +45,7 @@ function parseOperand(operandStr) {
     return {
         isDIObj,
         value,
-        adapters
+        mutators
     };
 }
 
@@ -64,17 +64,23 @@ function unwrapNamespace(data, namespace) {
 }
 
 function extract(data, operand, context) {
-    let tmpContext, value = operand.value;
+    let tmpContext, fn, value = operand.value;
     if (operand.isDIObj) {
         value = unwrapNamespace(data, value)
     }
 
-    for (let adapter of operand.adapters) {
+    for (let mutator of operand.mutators) {
         if (operand.isDIObj) {
             context[operand.value] = context[operand.value] || {};
             tmpContext = context[operand.value];
         }
-        value = adapters[adapter](value, tmpContext);
+
+        fn = mutators[mutator];
+        if (typeof fn !== 'function') {
+            fn = fn[prefix];
+        }
+
+        value = fn(value, tmpContext);
     }
     return value;
 }
@@ -99,17 +105,36 @@ function parseExp(expStr) {
     }
 }
 
-function executeExp(data, exp, context) {
+function postfixApply(operand, data, context, key){
+    for (let mutator of operand.mutators) {
+        if (operand.isDIObj && typeof mutators[mutator] === 'object') {
+            data.result = mutators[mutator][postfix](data, context[operand.value], key);
+        }
+    }
+}
+
+function executeExp(inputData, exp, context, key) {
     const operators = getOperators();
-    const leftOperand = extract(data, exp.left, context);
-    const rightOperand = extract(data, exp.right, context);
+    const leftOperand = extract(inputData, exp.left, context, key);
+    const rightOperand = extract(inputData, exp.right, context, key);
     let path = '*';
 
     if (exp.left.isDIObj && typeof operators[exp.operator][exp.left.value] === 'function') {
         path = exp.left.value
     }
 
-    return operators[exp.operator][path](leftOperand, rightOperand);
+    let result = operators[exp.operator][path](leftOperand, rightOperand);
+
+    let data = {
+        leftValue: exp.left.value,
+        rightValue: exp.right.value,
+        result
+    };
+
+    postfixApply(exp.left, data, context, key);
+    postfixApply(exp.right, data, context, key);
+
+    return data.result;
 }
 
 export {
