@@ -1,4 +1,11 @@
-import {parseExp, executeExp, registerOperator, unregisterOperator} from './target';
+import {
+    parseExp,
+    executeExp,
+    registerOperator,
+    unregisterOperator,
+    unregisterMutator,
+    registerMutator
+} from './target';
 
 let _property = Symbol(); // inner property name
 
@@ -77,5 +84,7 @@ class Policy {
 export {
     Policy,
     registerOperator,
-    unregisterOperator
+    unregisterOperator,
+    registerMutator,
+    unregisterMutator
 }

@@ -1,5 +1,5 @@
 import {getOperators, registerOperator, unregisterOperator} from './operator';
-import {mutators, prefix, postfix} from './mutator';
+import {getMutators, prefix, postfix, registerMutator, unregisterMutator} from './mutator';
 
 // todo change to more stronger RegExp
 const leftRegExp = /\.{1,2}|\w*/;
@@ -31,7 +31,7 @@ function unwrapString(str) {
 
 function parseOperand(operandStr) {
     const array = operandStr.split('..');
-    const mutators = array.slice(1, array.length);
+    const _mutators = array.slice(1, array.length);
     const isDIObj = isObjWithAttr(array[0]);
     let value;
 
@@ -45,7 +45,7 @@ function parseOperand(operandStr) {
     return {
         isDIObj,
         value,
-        mutators
+        mutators: _mutators
     };
 }
 
@@ -75,12 +75,12 @@ function extract(data, operand, context) {
             tmpContext = context[operand.value];
         }
 
-        fn = mutators[mutator];
-        if (typeof fn !== 'function') {
+        fn = getMutators()[mutator];
+        if (fn && typeof fn !== 'function') {
             fn = fn[prefix];
         }
 
-        value = fn(value, tmpContext);
+        value = fn ? fn(value, tmpContext) : value;
     }
     return value;
 }
@@ -106,9 +106,11 @@ function parseExp(expStr) {
 }
 
 function postfixApply(operand, data, context, key){
+    const _mutators = getMutators();
+
     for (let mutator of operand.mutators) {
-        if (operand.isDIObj && typeof mutators[mutator] === 'object') {
-            data.result = mutators[mutator][postfix](data, context[operand.value], key);
+        if (operand.isDIObj && typeof _mutators[mutator] === 'object' && _mutators[mutator][postfix]) {
+            data.result = _mutators[mutator][postfix](data, context[operand.value], key);
         }
     }
 }
@@ -126,8 +128,8 @@ function executeExp(inputData, exp, context, key) {
     let result = operators[exp.operator][path](leftOperand, rightOperand);
 
     let data = {
-        leftValue: exp.left.value,
-        rightValue: exp.right.value,
+        leftValue: leftOperand,
+        rightValue: rightOperand,
         result
     };
 
@@ -141,5 +143,7 @@ export {
     parseExp,
     executeExp,
     registerOperator,
-    unregisterOperator
+    unregisterOperator,
+    registerMutator,
+    unregisterMutator
 }

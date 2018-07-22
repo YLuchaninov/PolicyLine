@@ -1,5 +1,3 @@
-// todo create DI possibility for custom mutators
-
 function extractDate(a) {
     if (a instanceof Date) return a;
     return new Date(a);
@@ -9,17 +7,37 @@ const prefix = Symbol();
 const postfix = Symbol();
 
 const mutators = {
-    'radius': { //todo change
-        [prefix]: (a, context) => (a),
-        [postfix]: (data, context, key) => (data.result)
+    'radius': {
+        [postfix]: (data, context, key) => {
+            context.radius = data.rightValue;
+            return true;
+        }
     },
-    'position': { //todo change
-        [prefix]: (a, context) => (a),
-        [postfix]: (data, context, key) => (data.result)
+    'inArea': {
+        [postfix]: (data, context, key) => {
+            function deg2rad(deg) {
+                return deg * (Math.PI / 180)
+            }
+
+            function getDistInKm(lat1, lon1, lat2, lon2) {
+                let R = 6371; // Radius of the earth in km
+                let dLat = deg2rad(lat2 - lat1);  // deg2rad below
+                let dLon = deg2rad(lon2 - lon1);
+                let a =
+                    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+                    Math.sin(dLon / 2) * Math.sin(dLon / 2)
+                ;
+                let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                return R * c; // Distance in km
+            }
+
+            const distance = getDistInKm(data.rightValue[0], data.rightValue[1], data.leftValue[0], data.leftValue[1]);
+            return context.radius >= distance;
+        }
     },
 
     'or': {
-        [prefix]: (a, context) => (a),
         [postfix]: (data, context, key) => {
             context.container = context.container || {};
             context.container[key] = data.result;
@@ -34,22 +52,39 @@ const mutators = {
         }
     },
 
+    'toInt': (a) => (parseInt(a, 10)),
+    'toString': (a) => (a + ''),
+    'trim': (a) => (a.trim()),
+    'uppercase': (a) => (a.toUpperCase()),
+    'lowercase': (a) => (a.toLowerCase()),
+
     'minute': (a) => (extractDate(a).getMinutes()),
     'day': (a) => (extractDate(a).getDate()), // according to the local time
     'hour': (a) => (extractDate(a).getHours()), // according to the local time
     'weekday': (a) => (extractDate(a).getDay()), // according to the local time
     'month': (a) => (extractDate(a).getMonth()), // according to the local time
     'year': (a) => (extractDate(a).getFullYear()), // according to the local time
-
-    'toInt': (a) => (parseInt(a, 10)),
-    'toString': (a) => (a + ''),
-    'trim': (a) => (a.trim()),
-    'uppercase': (a) => (a.toUpperCase()),
-    'lowercase': (a) => (a.toLowerCase()),
 };
 
+function getMutators() {
+    return mutators;
+}
+
+function registerMutator(name, prefixFn, postfixFn) {
+    mutators[name] = {
+        [prefix]: prefixFn,
+        [postfix]: postfixFn
+    };
+}
+
+function unregisterMutator(name) {
+    delete mutators[name];
+}
+
 export {
-    mutators,
+    getMutators,
     prefix,
-    postfix
+    postfix,
+    registerMutator,
+    unregisterMutator
 };

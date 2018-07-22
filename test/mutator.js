@@ -2,8 +2,79 @@ let expect = require('chai').expect;
 let ABAC = require('../dist/policyline.min');
 
 let Policy = ABAC.Policy;
+let register = ABAC.registerMutator;
+let unregister = ABAC.unregisterMutator;
 
 describe("Mutators Checking", function () {
+    it(": toInt", function () {
+        let rules = {
+            target: [
+                'user.str..toInt=100',
+            ]
+        };
+
+        let policy = new Policy(rules);
+        let data = {
+            user: {
+                str: '100'
+            }
+        };
+
+        expect(policy.check(data)).to.equal(true);
+    });
+
+    it(": toInt - negative case", function () {
+        let rules = {
+            target: [
+                'user.str..toInt=100',
+            ]
+        };
+
+        let policy = new Policy(rules);
+        let data = {
+            user: {
+                str: '200'
+            }
+        };
+
+        expect(policy.check(data)).to.equal(false);
+    });
+
+    it(": toString", function () {
+        let rules = {
+            target: [
+                'user.num..toString="100"',
+            ]
+        };
+
+        let policy = new Policy(rules);
+        let data = {
+            user: {
+                num: 100
+            }
+        };
+
+        expect(policy.check(data)).to.equal(true);
+    });
+
+    it(": toString - negative case", function () {
+        let rules = {
+            target: [
+                'user.num..toString="200"',
+            ]
+        };
+
+        let policy = new Policy(rules);
+        let data = {
+            user: {
+                num: 100
+            }
+        };
+
+        expect(policy.check(data)).to.equal(false);
+    });
+
+
     it(": left side lowercase", function () {
         let rules = {
             target: [
@@ -186,6 +257,116 @@ describe("Mutators Checking", function () {
         let data = {
             user: {
                 role: 'super_user'
+            }
+        };
+
+        expect(policy.check(data)).to.equal(false);
+    });
+
+    it(": radius && inArea", function () {
+        let rules = {
+            target: [
+                'user.location..radius=100',
+                'user.location..inArea=[49.82218642, 35.55960819]',
+            ]
+        };
+
+        let policy = new Policy(rules);
+        let data = {
+            user: {
+                location: [49.9935, 36.2304]
+            }
+        };
+
+        expect(policy.check(data)).to.equal(true);
+    });
+
+    it(": radius && inArea - negative case", function () {
+        let rules = {
+            target: [
+                'user.location..radius=100',
+                'user.location..inArea=[49.25182306, 33.26346561]',
+            ]
+        };
+
+        let policy = new Policy(rules);
+        let data = {
+            user: {
+                location: [49.9935, 36.2304]
+            }
+        };
+
+        expect(policy.check(data)).to.equal(false);
+    });
+
+    it(": custom mutator", function () {
+        register('add10', (a) => (a + 10));
+        let rules = {
+            target: [
+                'user.num..add10=110',
+            ]
+        };
+
+        let policy = new Policy(rules);
+        let data = {
+            user: {
+                num: 100
+            }
+        };
+
+        expect(policy.check(data)).to.equal(true);
+        unregister('add10');
+    });
+
+    it(": custom mutator - right side", function () {
+        register('add10', (a) => (a + 10));
+        let rules = {
+            target: [
+                '110=user.num..add10',
+            ]
+        };
+
+        let policy = new Policy(rules);
+        let data = {
+            user: {
+                num: 100
+            }
+        };
+
+        expect(policy.check(data)).to.equal(true);
+        unregister('add10');
+    });
+
+    it(": custom mutator - negative case", function () {
+        register('add10', (a) => (a + 10));
+        let rules = {
+            target: [
+                'user.num..add10=120',
+            ]
+        };
+
+        let policy = new Policy(rules);
+        let data = {
+            user: {
+                num: 100
+            }
+        };
+
+        expect(policy.check(data)).to.equal(false);
+        unregister('add10');
+    });
+
+    it(": custom mutator - unregister case", function () {
+        let rules = {
+            target: [
+                'user.num..add10=110',
+            ]
+        };
+
+        let policy = new Policy(rules);
+        let data = {
+            user: {
+                num: 100
             }
         };
 
