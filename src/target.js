@@ -122,12 +122,14 @@ function executeExp(inputData, exp, context, key) {
     let path = '*';
 
     if (exp.left.isDIObj && typeof operators[exp.operator][exp.left.value] === 'function') {
-        path = exp.left.value
+        path = exp.left.value; // todo right side custom operator
     }
 
     let result = operators[exp.operator][path](leftOperand, rightOperand);
 
     let data = {
+        leftIsData: !exp.left.isDIObj,
+        rightIsData: !exp.right.isDIObj,
         leftValue: leftOperand,
         rightValue: rightOperand,
         result

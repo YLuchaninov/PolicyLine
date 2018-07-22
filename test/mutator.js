@@ -281,6 +281,24 @@ describe("Mutators Checking", function () {
         expect(policy.check(data)).to.equal(true);
     });
 
+    it(": radius && inArea - right side", function () {
+        let rules = {
+            target: [
+                '100=user.location..radius',
+                '[49.82218642, 35.55960819]=user.location..inArea',
+            ]
+        };
+
+        let policy = new Policy(rules);
+        let data = {
+            user: {
+                location: [49.9935, 36.2304]
+            }
+        };
+
+        expect(policy.check(data)).to.equal(true);
+    });
+
     it(": radius && inArea - negative case", function () {
         let rules = {
             target: [

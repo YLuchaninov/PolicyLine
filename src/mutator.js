@@ -9,7 +9,12 @@ const postfix = Symbol();
 const mutators = {
     'radius': {
         [postfix]: (data, context, key) => {
-            context.radius = data.rightValue;
+            if (data.leftIsData) {
+                context.radius = data.leftValue;
+            } else {
+                context.radius = data.rightValue;
+            }
+
             return true;
         }
     },
