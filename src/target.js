@@ -105,7 +105,7 @@ function parseExp(expStr) {
     }
 }
 
-function postfixApply(operand, data, context, key){
+function postfixApply(operand, data, context, key) {
     const _mutators = getMutators();
 
     for (let mutator of operand.mutators) {
@@ -122,7 +122,9 @@ function executeExp(inputData, exp, context, key) {
     let path = '*';
 
     if (exp.left.isDIObj && typeof operators[exp.operator][exp.left.value] === 'function') {
-        path = exp.left.value; // todo right side custom operator
+        path = exp.left.value;
+    } else if (exp.right.isDIObj && typeof operators[exp.operator][exp.right.value] === 'function') {
+        path = exp.right.value;
     }
 
     let result = operators[exp.operator][path](leftOperand, rightOperand);
