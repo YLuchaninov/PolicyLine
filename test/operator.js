@@ -15,9 +15,7 @@ describe("Operators Checking", function () {
 
                 'action.type="test"',
 
-                'env.department.type="R&D"',
-
-                'resource.value="GHT"'
+                'env.department.type="R&D"'
             ]
         };
 
@@ -33,9 +31,6 @@ describe("Operators Checking", function () {
                 department: {
                     type: "R&D"
                 }
-            },
-            resource: {
-                value: "GHT"
             }
         };
 

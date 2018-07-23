@@ -4,10 +4,20 @@ import {
     registerOperator,
     unregisterOperator,
     unregisterMutator,
-    registerMutator
+    registerMutator,
+    getOperators
 } from './target';
+import {
+    composeCondition
+} from './condition';
 
-let _property = Symbol(); // inner property name
+const _property = Symbol(); // inner property name
+const USER = 'user.';
+const RESOURCE = 'resource.';
+
+function checkOperand(oper, objStr) {
+    return oper.isDIObj && oper.value.indexOf && oper.value.indexOf(objStr) === 0;
+}
 
 class Policy {
 
@@ -20,10 +30,17 @@ class Policy {
      * @param {object} jsonPolicy - Plain javascript object, which contain policy rules in JSON like structure.
      */
     constructor(jsonPolicy) {
+        let tempObj;
+        const parsedRules = [];
+        const operators = getOperators();
+
         // create hidden container for save any instance date
         this[_property] = {
             effect: jsonPolicy.effect !== 'deny',
-            target: []
+            target: [],
+            condition: [],
+            watcher: [],
+            lastData: null
         };
 
         // construction part
@@ -31,10 +48,34 @@ class Policy {
         //     // todo
         //     console.error('not implemented!');
         // } else {
-        // todo
+
         for (let expStr of jsonPolicy.target) {
-            this[_property].target.push(parseExp(expStr));
+            parsedRules.push(parseExp(expStr));
         }
+
+        for (let exp of parsedRules) {
+            // fill conditions
+            if (checkOperand(exp.left, RESOURCE)) {
+                this[_property].condition.push(exp);
+            } else if (checkOperand(exp.right, RESOURCE)) {
+                tempObj = exp.right;
+                exp.right = exp.left;
+                exp.left = tempObj;
+                exp.operator = operators[exp.operator].reverse;
+                this[_property].condition.push(exp);
+            } else {
+                this[_property].target.push(exp);
+            }
+
+
+            // todo fill watchers
+            if (checkOperand(exp.left, USER)) {
+            } else if (checkOperand(exp.right, USER)) {
+            }
+        }
+
+
+        //this[_property].target = parsedRules;
         // }
     }
 
@@ -46,11 +87,17 @@ class Policy {
      * @returns {boolean} `true` in permit case, `false` in deny case.
      */
     check(data) {
-        const context = {};
+        const context = {}, results = {};
+        let key, tmp;
 
-        let key, tmp, results = {};
-        for (let targetExp of this[_property].target) { // todo
+        // save data for next `getConditions` & `getWatchers`
+        this[_property].lastData = data;
+
+        // execute expressions(targets)
+        for (let targetExp of this[_property].target) {
+            // generate unique random key
             key = Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+
             tmp = executeExp(data, targetExp, context, key);
             if (typeof tmp === 'boolean') {
                 results[key] = tmp;
@@ -59,23 +106,31 @@ class Policy {
             }
         }
 
+        // calculate final result
         let result = true;
         Object.values(results).forEach((value) => {
             result = result && value;
         });
+
+        // apply effect to result & return
         return this[_property].effect ? result : !result;
     }
 
-    // /**
-    //  * Function return object with condition.
-    //  * @param {object} adapter - Adapter, by default - for JSONB
-    //  * @returns {object}
-    //  */
-    // getConditions(adapter) {
-    //     return null;
-    // }
-    //
-    // getUsers({user, action, env, resource}) {
+    /**
+     * Function return object with condition.
+     * @param {object} adapter - Adapter, by default - for JSONB
+     * @returns {object}
+     */
+    getConditions(adapter) {
+        const conditions = [];
+        for (let expr of this[_property].condition) {
+            conditions.push(composeCondition(expr));
+        }
+
+        return conditions;
+    }
+
+    // getWatchers({user, action, env, resource}) {
     //     return null;
     // }
 

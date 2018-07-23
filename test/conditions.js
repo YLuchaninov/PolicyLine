@@ -20,5 +20,6 @@ describe("Conditions Checking", function () {
         };
 
         expect(policy.check(data)).to.equal(true);
+        console.log(policy.getConditions(null));
     });
 });

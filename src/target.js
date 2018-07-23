@@ -148,5 +148,6 @@ export {
     registerOperator,
     unregisterOperator,
     registerMutator,
-    unregisterMutator
+    unregisterMutator,
+    getOperators
 }

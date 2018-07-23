@@ -1,42 +1,73 @@
 let store = {
     '==': {
-        '*': (a, b) => (a === b)
+        '*': (a, b) => (a === b),
+        reverse: '=='
     },
     '!=': {
-        '*': (a, b) => (a !== b)
+        '*': (a, b) => (a !== b),
+        reverse: '!='
     },
     '>=': {
-        '*': (a, b) => (a >= b)
+        '*': (a, b) => (a >= b),
+        reverse: '<='
     },
     '<=': {
-        '*': (a, b) => (a <= b)
+        '*': (a, b) => (a <= b),
+        reverse: '>='
     },
     '~=': {
         '*': (a, b) => { // contains in array
             if (!Array.isArray(b)) return false;
             return b.includes(a);
-        }
+        },
+        reverse: '~!'
+    },
+    '~!': {
+        '*': (b, a) => { // contains in array
+            if (!Array.isArray(b)) return false;
+            return b.includes(a);
+        },
+        reverse: '~='
     },
     '^=': {
         '*': (a, b) => { // not contains in array
             if (!Array.isArray(b)) return false;
             return !(b.includes(a));
-        }
+        },
+        reverse: '^!'
+    },
+    '^!': {
+        '*': (b, a) => { // not contains in array
+            if (!Array.isArray(b)) return false;
+            return !(b.includes(a));
+        },
+        reverse: '^='
     },
     '?=': {
         '*': (a, b) => { // attribute is absent or equivalent
             if (!a) return true;
             return a === b;
-        }
+        },
+        reverse: '?!'
+    },
+    '?!': {
+        '*': (b, a) => { // attribute is absent or equivalent
+            if (!a) return true;
+            return a === b;
+        },
+        reverse: '?='
     },
     '=': {
-        '*': (a, b) => (a === b)
+        '*': (a, b) => (a === b),
+        reverse: '='
     },
     '>': {
-        '*': (a, b) => (a > b)
+        '*': (a, b) => (a > b),
+        reverse: '<'
     },
     '<': {
-        '*': (a, b) => (a < b)
+        '*': (a, b) => (a < b),
+        reverse: '>'
     }
 };
 
