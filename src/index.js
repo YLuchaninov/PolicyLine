@@ -122,13 +122,42 @@ class Policy {
      * @returns {object}
      */
     getConditions(adapter) {
-        const conditions = [];
+        // const conditions = [];
+        // for (let expr of this[_property].condition) {
+        //     conditions.push(composeCondition(expr));
+        // }
+        //
+        // return conditions;
+        const context = {}, results = {};
+        let key, tmp;
+
+        // save data for next `getConditions` & `getWatchers`
+        const data = this[_property].lastData;
+
+        // execute expressions(targets)
         for (let expr of this[_property].condition) {
-            conditions.push(composeCondition(expr));
+            // generate unique random key
+            key = Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+
+            tmp = composeCondition(data, expr, context, key);
+
+            if (typeof tmp === 'boolean') {
+                results[key] = tmp;
+            } else {
+                Object.assign(results, tmp);
+            }
         }
 
-        return conditions;
-    }
+        // // calculate final result
+        // let result = true;
+        // Object.values(results).forEach((value) => {
+        //     result = result && value;
+        // });
+        //
+        // // apply effect to result & return
+        // return this[_property].effect ? result : !result;
+        return results;
+        }
 
     // getWatchers({user, action, env, resource}) {
     //     return null;
