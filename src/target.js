@@ -1,8 +1,7 @@
 import {getOperators, registerOperator, unregisterOperator} from './operator';
 import {getMutators, prefix, postfix, registerMutator, unregisterMutator} from './mutator';
 
-// todo change to more stronger RegExp
-const leftRegExp = /\.{1,2}|\w*/;
+const leftRegExp = /^[a-zA-Z]+\.[a-zA-Z]+(?:\.\.[a-zA-Z]+)*/;
 const rightRegExp = /[^\n]+/;
 
 const quote = '\'';

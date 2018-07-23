@@ -418,27 +418,6 @@ describe("Operators Checking", function () {
         unregister('#=', '*');
     });
 
-    it(": custom global operator - right side", function () {
-        register('#=', '*', (a, b) => (a === b));
-
-        let rules = {
-            target: [
-                '"developer"#=user.role'
-            ]
-        };
-
-        let policy = new Policy(rules);
-        let data = {
-            user: {
-                role: 'developer'
-            }
-        };
-
-        expect(policy.check(data)).to.equal(true);
-
-        unregister('#=', '*');
-    });
-
     it(": custom global operator - negative case", function () {
         register('#=', '*', (a, b) => (a === b));
 
@@ -484,29 +463,6 @@ describe("Operators Checking", function () {
             target: [
                 'user.role="admin"',
                 'user.custom="customString"'
-            ]
-        };
-
-        let policy = new Policy(rules);
-        let data = {
-            user: {
-                custom: 'CUSTOMSTRING',
-                role: 'admin'
-            }
-        };
-
-        expect(policy.check(data)).to.equal(true);
-
-        unregister('=', 'user.custom');
-    });
-
-    it(": custom namespace operator - right side", function () {
-        register('=', 'user.custom', (a, b) => (a.toUpperCase() === b));
-
-        let rules = {
-            target: [
-                '"admin"=user.role',
-                '"customString"=user.custom'
             ]
         };
 
