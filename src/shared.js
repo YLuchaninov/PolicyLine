@@ -1,4 +1,4 @@
-import {getMutators, prefix} from "./mutator";
+import Mutator from "./mutator";
 
 function unwrapNamespace(data, namespace) {
     const path = namespace.split('.');
@@ -26,9 +26,9 @@ function extract(data, operand, context) {
             tmpContext = context[operand.value];
         }
 
-        fn = getMutators()[mutator];
+        fn = Mutator.list[mutator];
         if (fn && typeof fn !== 'function') {
-            fn = fn[prefix];
+            fn = fn[Mutator.prefix];
         }
 
         value = fn ? fn(value, tmpContext) : value;

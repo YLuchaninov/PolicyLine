@@ -1,14 +1,12 @@
 import {
     parseExp,
     executeExp,
-    registerOperator,
-    unregisterOperator,
-    unregisterMutator,
-    registerMutator,
-    getOperators
+    Operator,
+    Mutator
 } from './target';
 import {
-    prepareCondition
+    prepareCondition,
+    Adapter,
 } from './condition';
 
 const _property = Symbol(); // inner property name
@@ -32,7 +30,7 @@ class Policy {
     constructor(jsonPolicy) {
         let tempObj;
         const parsedRules = [];
-        const operators = getOperators();
+        const operators = Operator.list;
 
         // create hidden container for save any instance date
         this[_property] = {
@@ -120,25 +118,20 @@ class Policy {
 
     /**
      * Function return object with condition.
-     * @param {object} adapter - Adapter, by default - for JSONB
+     * @param {Function} adapter - Adapter
      * @returns {object}
      */
     getConditions(adapter) {
-        const context = {}, results = {};
-        let key, tmp;
-
-        // save data for next `getConditions` & `getWatchers`
-        const data = this[_property].lastData;
-
-        // execute expressions(targets)
-        for (let expr of this[_property].condition) {
-            // generate unique random key
-            key = Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
-
-            results[key] = prepareCondition(data, expr, context, key);
+        if (typeof adapter !== 'function') {
+            adapter = Adapter.MongoJSONb;
         }
 
-        return results;
+        const context = {}, results = [], data = this[_property].lastData;
+        for (let expr of this[_property].condition) {
+            results.push(prepareCondition(data, expr, context));
+        }
+
+        return adapter(results);
     }
 
     // getWatchers({user, action, env, resource}) {
@@ -149,8 +142,7 @@ class Policy {
 
 export {
     Policy,
-    registerOperator,
-    unregisterOperator,
-    registerMutator,
-    unregisterMutator
+    Operator,
+    Mutator,
+    Adapter
 }

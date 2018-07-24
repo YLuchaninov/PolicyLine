@@ -1,9 +1,9 @@
 let expect = require('chai').expect;
-let ABAC = require('../dist/policyline.min');
+let PolicyLine = require('../dist/policyline.min');
 
-let Policy = ABAC.Policy;
-let register = ABAC.registerMutator;
-let unregister = ABAC.unregisterMutator;
+let Policy = PolicyLine.Policy;
+let register = PolicyLine.Mutator.register;
+let unregister = PolicyLine.Mutator.unregister;
 
 describe("Mutators Checking", function () {
     it(": toInt", function () {

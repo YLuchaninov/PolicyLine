@@ -1,5 +1,5 @@
-import {getOperators, registerOperator, unregisterOperator} from './operator';
-import {getMutators, postfix, registerMutator, unregisterMutator} from './mutator';
+import Operator from './operator';
+import Mutator from './mutator';
 import {extract} from './shared';
 
 const leftRegExp = /^[a-zA-Z]+\.[a-zA-Z]+(?:\.\.[a-zA-Z]+)*/;
@@ -50,7 +50,7 @@ function parseOperand(operandStr) {
 }
 
 function parseExp(expStr) {
-    const operators = getOperators();
+    const operators = Operator.list;
     let operator, parts;
     for (operator in operators) {
         parts = expStr.split(operator);
@@ -70,21 +70,21 @@ function parseExp(expStr) {
 }
 
 function postfixApply(operand, data, context, key) {
-    const _mutators = getMutators();
-
-    for (let mutator of operand.mutators) {
-        if (operand.isDIObj && typeof _mutators[mutator] === 'object' && _mutators[mutator][postfix]) {
-            data.result = _mutators[mutator][postfix](data, context[operand.value], key);
+    operand.mutators.forEach((mutator) => {
+        let expr = Mutator.list[mutator];
+        if (operand.isDIObj && typeof expr === 'object' && expr[Mutator.postfix]) {
+            data.result = expr[Mutator.postfix](data, context[operand.value], key);
         }
-    }
+    });
 }
 
 function executeExp(inputData, exp, context, key) {
-    const operators = getOperators();
-    const leftOperand = extract(inputData, exp.left, context, key);
-    const rightOperand = extract(inputData, exp.right, context, key);
-    let path = '*';
+    const operators = Operator.list;
+    const leftOperand = extract(inputData, exp.left, context);
+    const rightOperand = extract(inputData, exp.right, context);
 
+    // get correct path to operator implementation
+    let path = '*';
     if (exp.left.isDIObj && typeof operators[exp.operator][exp.left.value] === 'function') {
         path = exp.left.value;
     } else if (exp.right.isDIObj && typeof operators[exp.operator][exp.right.value] === 'function') {
@@ -110,9 +110,6 @@ function executeExp(inputData, exp, context, key) {
 export {
     parseExp,
     executeExp,
-    registerOperator,
-    unregisterOperator,
-    registerMutator,
-    unregisterMutator,
-    getOperators
+    Operator,
+    Mutator,
 }

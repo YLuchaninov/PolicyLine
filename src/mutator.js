@@ -71,25 +71,25 @@ const mutators = {
     'year': (a) => (extractDate(a).getFullYear()), // according to the local time
 };
 
-function getMutators() {
-    return mutators;
-}
-
-function registerMutator(name, prefixFn, postfixFn) {
+function register(name, prefixFn, postfixFn) {
     mutators[name] = {
         [prefix]: prefixFn,
         [postfix]: postfixFn
     };
 }
 
-function unregisterMutator(name) {
+function unregister(name) {
     delete mutators[name];
 }
 
-export {
-    getMutators,
+const Mutator = {
     prefix,
     postfix,
-    registerMutator,
-    unregisterMutator
+    register,
+    unregister,
+    get list() {
+        return mutators;
+    }
 };
+
+export default Mutator;

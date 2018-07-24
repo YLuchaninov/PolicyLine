@@ -1,7 +1,7 @@
 let expect = require('chai').expect;
-let ABAC = require('../dist/policyline.min');
+let PolicyLine = require('../dist/policyline.min');
 
-let Policy = ABAC.Policy;
+let Policy = PolicyLine.Policy;
 
 describe("Effect Checking", function () {
     it(": 'permit'", function () {

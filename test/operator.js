@@ -1,9 +1,9 @@
 let expect = require('chai').expect;
-let ABAC = require('../dist/policyline.min');
+let PolicyLine = require('../dist/policyline.min');
 
-let Policy = ABAC.Policy;
-let register = ABAC.registerOperator;
-let unregister = ABAC.unregisterOperator;
+let Policy = PolicyLine.Policy;
+let register = PolicyLine.Operator.register;
+let unregister = PolicyLine.Operator.unregister;
 
 describe("Operators Checking", function () {
     it(": string equivalent & different objects", function () {
@@ -393,7 +393,11 @@ describe("Operators Checking", function () {
     });
 
     it(": custom global operator", function () {
-        register('#=', '*', (a, b) => (a === b));
+        register({
+            name: '#=',
+            namespace: '*',
+            implement: (a, b) => (a === b)
+        });
 
         let rules = {
             target: [
@@ -410,11 +414,18 @@ describe("Operators Checking", function () {
 
         expect(policy.check(data)).to.equal(true);
 
-        unregister('#=', '*');
+        unregister({
+            name: '#=',
+            namespace: '*'
+        });
     });
 
     it(": custom global operator - negative case", function () {
-        register('#=', '*', (a, b) => (a === b));
+        register({
+            name: '#=',
+            namespace: '*',
+            implement: (a, b) => (a === b)
+        });
 
         let rules = {
             target: [
@@ -431,7 +442,10 @@ describe("Operators Checking", function () {
 
         expect(policy.check(data)).to.equal(false);
 
-        unregister('#=', '*');
+        unregister({
+            name: '#=',
+            namespace: '*'
+        });
     });
 
     it(": custom global operator - unregister", function () {
@@ -452,7 +466,11 @@ describe("Operators Checking", function () {
     });
 
     it(": custom namespace operator", function () {
-        register('=', 'user.custom', (a, b) => (a === b.toUpperCase()));
+        register({
+            name: '=',
+            namespace: 'user.custom',
+            implement: (a, b) => (a === b.toUpperCase())
+        });
 
         let rules = {
             target: [
@@ -471,11 +489,18 @@ describe("Operators Checking", function () {
 
         expect(policy.check(data)).to.equal(true);
 
-        unregister('=', 'user.custom');
+        unregister({
+            name: '=',
+            namespace: 'user.custom',
+        });
     });
 
     it(": custom namespace operator - negative case", function () {
-        register('=', 'user.custom', (a, b) => (a === b.toUpperCase()));
+        register({
+            name: '=',
+            namespace: 'user.custom',
+            implement: (a, b) => (a === b.toUpperCase())
+        });
 
         let rules = {
             target: [
@@ -494,7 +519,10 @@ describe("Operators Checking", function () {
 
         expect(policy.check(data)).to.equal(false);
 
-        unregister('=', 'user.custom');
+        unregister({
+            name: '=',
+            namespace: 'user.custom',
+        });
     });
 
     it(": custom namespace operator - unregistered ", function () {

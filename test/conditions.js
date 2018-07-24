@@ -1,7 +1,7 @@
 let expect = require('chai').expect;
-let ABAC = require('../dist/policyline.min');
+let PolicyLine = require('../dist/policyline.min');
 
-let Policy = ABAC.Policy;
+let Policy = PolicyLine.Policy;
 
 describe("Conditions Checking", function () {
     it(": temporary test", function () {
