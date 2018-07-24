@@ -69,6 +69,13 @@ const mutators = {
     'weekday': (a) => (extractDate(a).getDay()), // according to the local time
     'month': (a) => (extractDate(a).getMonth()), // according to the local time
     'year': (a) => (extractDate(a).getFullYear()), // according to the local time
+
+    'regExp': (a) => {
+        const position = a.lastIndexOf('/');
+        const exp = a.substring(0, position);
+        const flags = a.substring(position + 1, a.length);
+        return flags && flags.length ? new RegExp(exp, flags) : new RegExp(exp);
+    }
 };
 
 function register(name, prefixFn, postfixFn) {

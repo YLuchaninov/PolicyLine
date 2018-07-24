@@ -24,30 +24,36 @@ const OperatorMap = {
     '~=': '$in', //Matches any of the values specified in an array.
     '^=': '$nin', //Matches none of the values specified in an array.
 };
-const repeat =()=>{};
+
 const MutatorMap = {
-    'or': ()=>{},
-    'radius':()=>{},
-    'inArea':()=>{}
+    'or': () => {
+    },
+    'radius': () => {
+    },
+    'inArea': () => {
+    }
 };
 
 const Adapter = {
     MongoJSONb: rules => {
         const result = {};
-        let resource;
+        let attribute;
         for (let rule of rules) {
-            resource = rule.resource.replace('resource.', '');
-
-            if (result[resource] && Array.isArray(result[resource])) {
-
-            } else if (result[resource]) {
-
+            attribute = rule.resource.replace('resource.', '');
+            if (result[attribute]) {
+                result[attribute][OperatorMap[rule.operator]] = rule.value;
             } else {
-
-
+                if (rule.operator === '=') {
+                    result[attribute] = rule.value;
+                } else {
+                    result[attribute] = {
+                        [OperatorMap[rule.operator]]: rule.value
+                    }
+                }
             }
         }
-        return rules; // todo change to result
+
+        return result;
     },
 };
 
