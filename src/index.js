@@ -8,7 +8,7 @@ import {
     getOperators
 } from './target';
 import {
-    composeCondition
+    prepareCondition
 } from './condition';
 
 const _property = Symbol(); // inner property name
@@ -61,7 +61,9 @@ class Policy {
                 tempObj = exp.right;
                 exp.right = exp.left;
                 exp.left = tempObj;
-                exp.operator = operators[exp.operator].reverse;
+                if (operators[exp.operator].reverse) {
+                    exp.operator = operators[exp.operator].reverse;
+                }
                 this[_property].condition.push(exp);
             } else {
                 this[_property].target.push(exp);
@@ -122,12 +124,6 @@ class Policy {
      * @returns {object}
      */
     getConditions(adapter) {
-        // const conditions = [];
-        // for (let expr of this[_property].condition) {
-        //     conditions.push(composeCondition(expr));
-        // }
-        //
-        // return conditions;
         const context = {}, results = {};
         let key, tmp;
 
@@ -139,25 +135,11 @@ class Policy {
             // generate unique random key
             key = Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
 
-            tmp = composeCondition(data, expr, context, key);
-
-            if (typeof tmp === 'boolean') {
-                results[key] = tmp;
-            } else {
-                Object.assign(results, tmp);
-            }
+            results[key] = prepareCondition(data, expr, context, key);
         }
 
-        // // calculate final result
-        // let result = true;
-        // Object.values(results).forEach((value) => {
-        //     result = result && value;
-        // });
-        //
-        // // apply effect to result & return
-        // return this[_property].effect ? result : !result;
         return results;
-        }
+    }
 
     // getWatchers({user, action, env, resource}) {
     //     return null;

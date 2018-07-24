@@ -1,11 +1,9 @@
 let store = {
     '==': {
-        '*': (a, b) => (a === b),
-        reverse: '=='
+        '*': (a, b) => (a === b)
     },
     '!=': {
-        '*': (a, b) => (a !== b),
-        reverse: '!='
+        '*': (a, b) => (a !== b)
     },
     '>=': {
         '*': (a, b) => (a >= b),
@@ -58,8 +56,7 @@ let store = {
         reverse: '?='
     },
     '=': {
-        '*': (a, b) => (a === b),
-        reverse: '='
+        '*': (a, b) => (a === b)
     },
     '>': {
         '*': (a, b) => (a > b),
@@ -75,7 +72,7 @@ function getOperators() {
     return store;
 }
 
-function registerOperator(operatorStr, namespace, implementationFn) {
+function registerOperator(operatorStr, namespace, implementationFn) { // todo add reverse
     store[operatorStr] = store[operatorStr] || {};
     store[operatorStr][namespace] = implementationFn;
 
@@ -98,7 +95,7 @@ function registerOperator(operatorStr, namespace, implementationFn) {
     store = obj;
 }
 
-function unregisterOperator(operatorStr, namespace) {
+function unregisterOperator(operatorStr, namespace) { // todo remove reverse
     let container = store[operatorStr];
     delete container[namespace];
 

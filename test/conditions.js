@@ -7,8 +7,12 @@ describe("Conditions Checking", function () {
     it(": temporary test", function () {
         let rules = {
             target: [
-                'user.location==resource.location',
-                'resource.type=="inner"'
+                'user.company=resource.company',
+                'resource.type="inner"',
+                'resource.department..or="R&D"',
+                'resource.department..or="sale"',
+                'resource.location..radius=100',
+                'resource.location..inArea=user.location'
             ]
         };
 
