@@ -4,9 +4,10 @@ import {extract} from './shared';
 function prepareCondition(inputData, exp, context) {
     const leftOperand = extract(inputData, exp.left, context, null);
     const rightOperand = extract(inputData, exp.right, context, null);
+    let resource = leftOperand === null ? exp.left.value : leftOperand;
 
     return {
-        resource: leftOperand === null ? exp.left.value : leftOperand,
+        attribute: resource.replace('resource.', ''),
         value: rightOperand === null ? exp.right.value : rightOperand,
         operator: exp.operator,
         mutators: exp.left.mutators
@@ -39,7 +40,7 @@ const Adapter = {
         const result = {};
         let attribute;
         for (let rule of rules) {
-            attribute = rule.resource.replace('resource.', '');
+            attribute = rule.attribute;
             if (result[attribute]) {
                 result[attribute][OperatorMap[rule.operator]] = rule.value;
             } else {
