@@ -14,43 +14,44 @@ function prepareCondition(inputData, exp, context) {
     };
 }
 
-const OperatorMap = {
-    '=': '$eq',	//Matches values that are equal to a specified value.
-    '==': '$eq', //Matches values that are equal to a specified value.
-    '!=': '$ne', //Matches all values that are not equal to a specified value.
-    '>=': '$gte', //Matches values that are greater than or equal to a specified value.
-    '>': '$gt',	//Matches values that are greater than a specified value.
-    '<=': '$lte', //Matches values that are less than or equal to a specified value.
-    '<': '$lt',	//Matches values that are less than a specified value.
-    '~=': '$in', //Matches any of the values specified in an array.
-    '^=': '$nin', //Matches none of the values specified in an array.
-};
-
-const MutatorMap = {
-    'or': (rule, result, context) => {
-        result[rule.attribute] = result[rule.attribute] || {
-            '$or': []
-        };
-        result[rule.attribute]['$or'].push(rule.value);
-    },
-    'radius': (rule, result, context) => {
-        context.radius = rule.value;
-    },
-    'inArea': (rule, result, context) => {
-        result[rule.attribute] = {
-            $near: {
-                $geometry: {
-                    type: "Point",
-                    coordinates: rule.value
-                },
-                $maxDistance: 1000 * context.radius,
-            }
-        };
-    }
-};
-
 const Adapter = {
     MongoJSONb: rules => {
+        const OperatorMap = {
+            '=': '$eq',	//Matches values that are equal to a specified value.
+            '==': '$eq', //Matches values that are equal to a specified value.
+            '!=': '$ne', //Matches all values that are not equal to a specified value.
+            '>=': '$gte', //Matches values that are greater than or equal to a specified value.
+            '>': '$gt',	//Matches values that are greater than a specified value.
+            '<=': '$lte', //Matches values that are less than or equal to a specified value.
+            '<': '$lt',	//Matches values that are less than a specified value.
+            '~=': '$in', //Matches any of the values specified in an array.
+            '^=': '$nin', //Matches none of the values specified in an array.
+        };
+
+        const MutatorMap = {
+            'or': (rule, result, context) => {
+                result[rule.attribute] = result[rule.attribute] || {
+                    '$or': []
+                };
+                result[rule.attribute]['$or'].push(rule.value);
+            },
+            'radius': (rule, result, context) => {
+                context.radius = rule.value;
+            },
+            'inArea': (rule, result, context) => {
+                result[rule.attribute] = {
+                    $near: {
+                        $geometry: {
+                            type: "Point",
+                            coordinates: rule.value
+                        },
+                        $maxDistance: 1000 * context.radius,
+                    }
+                };
+            }
+        };
+
+        // adapter logic
         const result = {}, context = {};
         let attribute;
 
