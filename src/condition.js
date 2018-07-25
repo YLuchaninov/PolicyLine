@@ -27,28 +27,54 @@ const OperatorMap = {
 };
 
 const MutatorMap = {
-    'or': () => {
+    'or': (rule, result, context) => {
+        result[rule.attribute] = result[rule.attribute] || {
+            '$or': []
+        };
+        result[rule.attribute]['$or'].push(rule.value);
     },
-    'radius': () => {
+    'radius': (rule, result, context) => {
+        context.radius = rule.value;
     },
-    'inArea': () => {
+    'inArea': (rule, result, context) => {
+        result[rule.attribute] = {
+            $near: {
+                $geometry: {
+                    type: "Point",
+                    coordinates: rule.value
+                },
+                $maxDistance: 1000 * context.radius,
+            }
+        };
     }
 };
 
 const Adapter = {
     MongoJSONb: rules => {
-        const result = {};
+        const result = {}, context = {};
         let attribute;
+
         for (let rule of rules) {
             attribute = rule.attribute;
-            if (result[attribute]) {
-                result[attribute][OperatorMap[rule.operator]] = rule.value;
+            if (rule.mutators.length) {
+                // apply mutators
+                for (let mutator of rule.mutators) {
+                    if (MutatorMap[mutator]) {
+                        context[rule.attribute] = context[rule.attribute] || {};
+                        MutatorMap[mutator](rule, result, context[rule.attribute]);
+                    }
+                }
             } else {
-                if (rule.operator === '=') {
-                    result[attribute] = rule.value;
+                // apply attribute to result object
+                if (result[attribute]) {
+                    result[attribute][OperatorMap[rule.operator]] = rule.value;
                 } else {
-                    result[attribute] = {
-                        [OperatorMap[rule.operator]]: rule.value
+                    if (rule.operator === '=') {
+                        result[attribute] = rule.value;
+                    } else {
+                        result[attribute] = {
+                            [OperatorMap[rule.operator]]: rule.value
+                        }
                     }
                 }
             }
