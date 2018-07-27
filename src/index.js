@@ -90,9 +90,6 @@ class Policy {
         const context = {}, results = {};
         let key, tmp;
 
-        // save data for next `getConditions` & `getWatchers`
-        this[_property].lastData = data;
-
         // execute expressions(targets)
         for (let targetExp of this[_property].target) {
             // generate unique random key
@@ -113,7 +110,16 @@ class Policy {
         });
 
         // apply effect to result & return
-        return this[_property].effect ? result : !result;
+        result = this[_property].effect ? result : !result;
+
+        // save data for next `getConditions` & `getWatchers`
+        if (result) {
+            this[_property].lastData = data;
+        } else {
+            this[_property].lastData = undefined;
+        }
+
+        return result;
     }
 
     /**
@@ -122,6 +128,10 @@ class Policy {
      * @returns {object}
      */
     getConditions(adapter) {
+        if (this[_property].lastData === undefined) {
+            return undefined;
+        }
+
         if (typeof adapter !== 'function') {
             adapter = Adapter.MongoJSONb;
         }

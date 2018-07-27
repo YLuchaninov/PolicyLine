@@ -4,6 +4,50 @@ let PolicyLine = require('../dist/policyline.min');
 let Policy = PolicyLine.Policy;
 
 describe("Conditions Checking", function () {
+    it(": positive case condition", function () {
+        let rules = {
+            target: [
+                'user.role="admin"',
+                'user.company=resource.company',
+            ]
+        };
+
+        let policy = new Policy(rules);
+        let data = {
+            user: {
+                role: 'admin',
+                company: 'companyA'
+            }
+        };
+
+        expect(policy.check(data)).to.equal(true);
+
+        let conditions = policy.getConditions(null);
+        let result = {company: 'companyA'};
+        expect(conditions).to.deep.equal(result);
+    });
+
+    it(": negative case condition", function () {
+        let rules = {
+            target: [
+                'user.role="admin"',
+                'user.company=resource.company',
+            ]
+        };
+
+        let policy = new Policy(rules);
+        let data = {
+            user: {
+                role: 'developer',
+                company: 'companyA'
+            }
+        };
+
+        expect(policy.check(data)).to.equal(false);
+        let conditions = policy.getConditions(null);
+        expect(conditions).to.equal(undefined);
+    });
+
     it(": complex test", function () {
         let rules = {
             target: [
