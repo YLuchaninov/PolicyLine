@@ -27,6 +27,25 @@ describe("Conditions Checking", function () {
         expect(conditions).to.deep.equal(result);
     });
 
+    it(": empty condition", function () {
+        let rules = {
+            target: [
+                'user.role="admin"'
+            ]
+        };
+
+        let policy = new Policy(rules);
+        let data = {
+            user: {
+                role: 'admin'
+            }
+        };
+
+        expect(policy.check(data)).to.equal(true);
+        let conditions = policy.getConditions(null);
+        expect(Object.keys(conditions).length).equal(0);
+    });
+
     it(": negative case condition", function () {
         let rules = {
             target: [
