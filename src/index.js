@@ -69,10 +69,12 @@ class Policy {
 
     check(data) {
         const context = {}, results = {};
-        let key, tmp, result = true;
+        let result = true;
 
         // execute expressions(targets)
-        for (let targetExp of this[_property].target) {
+        this[_property].target.forEach((targetExp) => {
+            let key, tmp;
+
             // generate unique random key
             key = Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
 
@@ -82,7 +84,7 @@ class Policy {
             } else {
                 Object.assign(results, tmp);
             }
-        }
+        });
 
         // calculate final result
         Object.values(results).forEach((value) => {
