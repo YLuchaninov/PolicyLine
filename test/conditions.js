@@ -22,7 +22,33 @@ describe("Conditions Checking", function () {
 
         expect(policy.check(data)).to.equal(true);
 
-        let conditions = policy.getConditions(null);
+        let conditions = policy.getConditions();
+        let result = {company: 'companyA'};
+        expect(conditions).to.deep.equal(result);
+    });
+
+    it(": double condition checking", function () {
+        let rules = {
+            target: [
+                'user.role="admin"',
+                'user.company=resource.company',
+            ]
+        };
+
+        let policy = new Policy(rules);
+        let data = {
+            user: {
+                role: 'admin',
+                company: 'companyA'
+            }
+        };
+
+        policy.check();
+        policy.getConditions();
+
+        expect(policy.check(data)).to.equal(true);
+
+        let conditions = policy.getConditions();
         let result = {company: 'companyA'};
         expect(conditions).to.deep.equal(result);
     });
@@ -42,7 +68,7 @@ describe("Conditions Checking", function () {
         };
 
         expect(policy.check(data)).to.equal(true);
-        let conditions = policy.getConditions(null);
+        let conditions = policy.getConditions();
         expect(Object.keys(conditions).length).equal(0);
     });
 
@@ -63,7 +89,7 @@ describe("Conditions Checking", function () {
         };
 
         expect(policy.check(data)).to.equal(false);
-        let conditions = policy.getConditions(null);
+        let conditions = policy.getConditions();
         expect(conditions).to.equal(undefined);
     });
 
@@ -95,7 +121,7 @@ describe("Conditions Checking", function () {
 
         expect(policy.check(data)).to.equal(true);
 
-        let conditions = policy.getConditions(null);
+        let conditions = policy.getConditions();
         let result = {
             "company": "companyA",
             "type": "inner",

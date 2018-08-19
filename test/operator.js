@@ -35,6 +35,20 @@ describe("Operators Checking", function () {
         };
 
         expect(policy.check(data)).to.equal(true);
+        expect(policy.check({
+            user: {
+                name: 'Joi'
+            },
+            action: {
+                type: "test2"
+            },
+            env: {
+                department: {
+                    type: "sales"
+                }
+            }
+        })).to.equal(false);
+        expect(policy.check(data)).to.equal(true);
     });
 
     it(": ==", function () {

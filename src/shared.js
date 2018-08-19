@@ -15,12 +15,13 @@ function unwrapNamespace(data, namespace) {
 }
 
 function extract(data, operand, context) {
-    let tmpContext, fn, value = operand.value;
+    let value = operand.value;
     if (operand.isDIObj) {
         value = unwrapNamespace(data, value)
     }
 
-    for (let mutator of operand.mutators) {
+    operand.mutators.forEach((mutator) => {
+        let tmpContext, fn;
         if (operand.isDIObj) {
             context[operand.value] = context[operand.value] || {};
             tmpContext = context[operand.value];
@@ -32,10 +33,25 @@ function extract(data, operand, context) {
         }
 
         value = fn ? fn(value, tmpContext) : value;
-    }
+    });
+
     return value;
 }
 
+function prepareCollection(inputData, exp, context, resourceName) {
+    const leftOperand = extract(inputData, exp.left, context, null);
+    const rightOperand = extract(inputData, exp.right, context, null);
+    let resource = leftOperand === null ? exp.left.value : leftOperand;
+
+    return {
+        attribute: resource.replace(resourceName, ''),
+        value: rightOperand === null ? exp.right.value : rightOperand,
+        operator: exp.operator,
+        mutators: exp.left.mutators
+    };
+}
+
 export {
-    extract
+    extract,
+    prepareCollection
 }

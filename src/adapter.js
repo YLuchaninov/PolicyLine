@@ -1,19 +1,3 @@
-import {extract} from './shared';
-
-
-function prepareCondition(inputData, exp, context) {
-    const leftOperand = extract(inputData, exp.left, context, null);
-    const rightOperand = extract(inputData, exp.right, context, null);
-    let resource = leftOperand === null ? exp.left.value : leftOperand;
-
-    return {
-        attribute: resource.replace('resource.', ''),
-        value: rightOperand === null ? exp.right.value : rightOperand,
-        operator: exp.operator,
-        mutators: exp.left.mutators
-    };
-}
-
 const Adapter = {
     MongoJSONb: rules => {
         const OperatorMap = {
@@ -55,16 +39,17 @@ const Adapter = {
         const result = {}, context = {};
         let attribute;
 
-        for (let rule of rules) {
+        rules.forEach((rule) => {
             attribute = rule.attribute;
+
             if (rule.mutators.length) {
                 // apply mutators
-                for (let mutator of rule.mutators) {
+                rule.mutators.forEach((mutator) => {
                     if (MutatorMap[mutator]) {
                         context[rule.attribute] = context[rule.attribute] || {};
                         MutatorMap[mutator](rule, result, context[rule.attribute]);
                     }
-                }
+                });
             } else {
                 // apply attribute to result object
                 if (result[attribute]) {
@@ -79,13 +64,10 @@ const Adapter = {
                     }
                 }
             }
-        }
+        });
 
         return result;
     },
 };
 
-export {
-    Adapter,
-    prepareCondition
-}
+export default Adapter;

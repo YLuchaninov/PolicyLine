@@ -1,94 +1,75 @@
-import {
-    parseExp,
-    executeExp,
-    Operator,
-    Mutator
-} from './target';
-import {
-    prepareCondition,
-    Adapter,
-} from './condition';
+import {parseExp, executeExp, Operator, Mutator} from './target';
+import {prepareCollection} from './shared';
+import Adapter from './adapter';
 
 const _property = Symbol(); // inner property name
 const USER = 'user.';
 const RESOURCE = 'resource.';
+const CONDITION = 'condition';
+const WATCHER = 'watcher';
+const BOOL = 'boolean';
+const DENY = 'deny';
 
 function checkOperand(oper, objStr) {
     return oper.isDIObj && oper.value.indexOf && oper.value.indexOf(objStr) === 0;
 }
 
+function collectResult(obj, data, property, resourceName) {
+    const context = {}, results = [];
+
+    obj[_property][property].forEach((expr) => {
+        results.push(prepareCollection(data, expr, context, resourceName));
+    });
+
+    return obj.adapter(results);
+}
+
+function prepareForNext(obj, _exp, propName, resourceName, callback) {
+    const operators = Operator.list, exp = JSON.parse(JSON.stringify(_exp));
+    let tempObj;
+
+    if (checkOperand(exp.left, resourceName)) {
+        obj[_property][propName].push(exp);
+    } else if (checkOperand(exp.right, resourceName)) {
+        tempObj = exp.right;
+        exp.right = exp.left;
+        exp.left = tempObj;
+        if (operators[exp.operator].reverse) {
+            exp.operator = operators[exp.operator].reverse;
+        }
+
+        obj[_property][propName].push(exp);
+    } else if (callback) {
+        callback(exp);
+    }
+}
+
 class Policy {
 
-    // static merge(expression, policies) {
-    //     // todo
-    // }
-
-    /**
-     * Create a Policy object by JSON rules.
-     * @param {object} jsonPolicy - Plain javascript object, which contain policy rules in JSON like structure.
-     */
     constructor(jsonPolicy) {
-        let tempObj;
-        const parsedRules = [];
-        const operators = Operator.list;
+        this.adapter = Adapter.MongoJSONb;
 
-        // create hidden container for save any instance date
         this[_property] = {
-            effect: jsonPolicy.effect !== 'deny',
+            effect: jsonPolicy.effect !== DENY,
             target: [],
             condition: [],
             watcher: [],
             lastData: null
         };
 
-        // construction part
-        // if (jsonPolicy.expression) {
-        //     // todo
-        //     console.error('not implemented!');
-        // } else {
-
-        for (let expStr of jsonPolicy.target) {
-            parsedRules.push(parseExp(expStr));
-        }
-
-        for (let exp of parsedRules) {
-            // fill conditions
-            if (checkOperand(exp.left, RESOURCE)) {
-                this[_property].condition.push(exp);
-            } else if (checkOperand(exp.right, RESOURCE)) {
-                tempObj = exp.right;
-                exp.right = exp.left;
-                exp.left = tempObj;
-                if (operators[exp.operator].reverse) {
-                    exp.operator = operators[exp.operator].reverse;
-                }
-                this[_property].condition.push(exp);
-            } else {
-                this[_property].target.push(exp);
-            }
-
-
-            // todo fill watchers
-            if (checkOperand(exp.left, USER)) {
-            } else if (checkOperand(exp.right, USER)) {
-            }
-        }
-
-
-        //this[_property].target = parsedRules;
-        // }
+        jsonPolicy.target
+            .map(expStr => parseExp(expStr))
+            .forEach((_exp) => {
+                prepareForNext(this, _exp, WATCHER, USER);
+                prepareForNext(this, _exp, CONDITION, RESOURCE, (exp) => {
+                    this[_property].target.push(exp);
+                });
+            });
     }
 
-    /**
-     * Check params object by policy rules, which was setted in constructor.
-     * @param {object} data - Object should contain four objects as attributes:
-     * `user`, `action`, `env`, `resource`
-     *
-     * @returns {boolean} `true` in permit case, `false` in deny case.
-     */
     check(data) {
         const context = {}, results = {};
-        let key, tmp;
+        let key, tmp, result = true;
 
         // execute expressions(targets)
         for (let targetExp of this[_property].target) {
@@ -96,7 +77,7 @@ class Policy {
             key = Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
 
             tmp = executeExp(data, targetExp, context, key);
-            if (typeof tmp === 'boolean') {
+            if (typeof tmp === BOOL) {
                 results[key] = tmp;
             } else {
                 Object.assign(results, tmp);
@@ -104,7 +85,6 @@ class Policy {
         }
 
         // calculate final result
-        let result = true;
         Object.values(results).forEach((value) => {
             result = result && value;
         });
@@ -112,42 +92,26 @@ class Policy {
         // apply effect to result & return
         result = this[_property].effect ? result : !result;
 
-        // save data for next `getConditions` & `getWatchers`
-        if (result) {
-            this[_property].lastData = data;
-        } else {
-            this[_property].lastData = undefined;
-        }
+        // save data for next `getConditions` methods
+        this[_property].lastData = result ? data : undefined;
 
         return result;
     }
 
-    /**
-     * Function return object with condition.
-     * @param {Function} adapter - Adapter
-     * @returns {object}
-     */
-    getConditions(adapter) {
-        if (this[_property].lastData === undefined) {
-            return undefined;
-        }
-
-        if (typeof adapter !== 'function') {
-            adapter = Adapter.MongoJSONb;
-        }
-
-        const context = {}, results = [], data = this[_property].lastData;
-        for (let expr of this[_property].condition) {
-            results.push(prepareCondition(data, expr, context));
-        }
-
-        return adapter(results);
+    setAdapter(adapter) {
+        this.adapter = adapter;
     }
 
-    // getWatchers({user, action, env, resource}) {
-    //     return null;
-    // }
+    getConditions() {
+        if (this[_property].lastData === undefined)
+            return undefined;
 
+        return collectResult(this, this[_property].lastData, CONDITION, RESOURCE);
+    }
+
+    getWatchers(data) {
+        return collectResult(this, data, WATCHER, USER);
+    }
 }
 
 export {
