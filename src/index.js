@@ -2,14 +2,16 @@ import {parseExp, executeExp, Operator, Mutator} from './target';
 import {prepareCollection} from './shared';
 import Adapter from './adapter';
 import {
-    createTokens,
-    infixToRPN,
+    // createTokens,
+    // infixToRPN,
     fillTokens,
     evaluateRPN,
     wrapToToken
 } from './expression';
+import {mergeDeep} from "./utils";
 
 const _property = Symbol(); // inner property name
+const _calcResult = Symbol();
 const USER = 'user.';
 const RESOURCE = 'resource.';
 const CONDITION = 'condition';
@@ -21,10 +23,10 @@ function checkOperand(oper, objStr) {
     return oper.isDIObj && oper.value.indexOf && oper.value.indexOf(objStr) === 0;
 }
 
-function collectResult(obj, data, property, resourceName) {
+function collectResult(obj, data, property, key, resourceName) {
     const context = {}, targetResults = [];
 
-    obj[_property][property].forEach((expr) => {
+    obj[_property][property][key].forEach((expr) => {
         targetResults.push(prepareCollection(data, expr, context, resourceName));
     });
 
@@ -119,10 +121,10 @@ class Policy {
             });
         }
 
-        let result = evaluateRPN(fillTokens(this[_property].expression, resultCollection)).res;
+        this[_calcResult] = evaluateRPN(fillTokens(this[_property].expression, resultCollection));
 
         // apply effect to bool result
-        result = this[_property].effect ? result : !result;
+        const result = this[_property].effect ? this[_calcResult].res : !this[_calcResult].res;
 
         // save data for next `getConditions` methods
         this[_property].lastData = result ? data : undefined;
@@ -134,15 +136,47 @@ class Policy {
         this.adapter = adapter;
     }
 
-    getConditions() {
+    getConditions(currentData) {
         if (this[_property].lastData === undefined)
             return undefined;
 
-        return collectResult(this, this[_property].lastData, CONDITION, RESOURCE);
+        currentData = currentData || {};
+
+        let data = {
+            user: mergeDeep(currentData.user, this[_property].lastData.user),
+            action: mergeDeep(currentData.action, this[_property].lastData.action),
+            env: mergeDeep(currentData.env, this[_property].lastData.env),
+            resource: mergeDeep(currentData.resource, this[_property].lastData.resource)
+        };
+
+        try {
+            let conditions = {}, condition = {};
+            Object.keys(this[_property].condition).forEach((key) => {
+                try {
+                    conditions[key] = collectResult(this, this[_property].lastData, CONDITION, key, RESOURCE);
+                } catch (error) {
+                    // important to close error in calculate condition
+                }
+            });
+
+
+            let array = Object.entries(conditions);
+            array.forEach((item) => {
+                if (this[_calcResult].val.includes(item[0])) {
+                    mergeDeep(condition, item[1]);
+                }
+            });
+
+            data = mergeDeep(condition, data.resource);
+        } catch (e) {
+            data = e;
+        }
+
+        return data;
     }
 
     getWatchers(data) {
-        return collectResult(this, data, WATCHER, USER);
+        //return collectResult(this, data, WATCHER, key, USER);
     }
 }
 

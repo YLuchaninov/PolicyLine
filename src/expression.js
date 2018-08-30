@@ -59,13 +59,21 @@ function infixToRPN(tokens) {
 }
 
 function fillTokens(tokens, data) {
-    return tokens.map((item) => {
+    const result = [];
+    tokens.forEach((item) => {
+        let obj = {
+            type: item.type,
+            res: item.res,
+            val: item.val
+        };
         if (item.type === TYPE.val) {
-            item.res = data[item.val];
-            item.val = [item.val];
+            obj.res = data[item.val];
+            obj.val = [item.val];
         }
-        return item;
+        result.push(obj);
     });
+
+    return result;
 }
 
 function evaluateRPN(tokens) {

@@ -43,14 +43,11 @@ describe("Conditions Checking", function () {
             }
         };
 
-        policy.check();
-        policy.getConditions();
+        expect(policy.check()).to.equal(false);
+        expect(policy.getConditions()).to.equal(undefined);
 
         expect(policy.check(data)).to.equal(true);
-
-        let conditions = policy.getConditions();
-        let result = {company: 'companyA'};
-        expect(conditions).to.deep.equal(result);
+        expect(policy.getConditions()).to.deep.equal({company: 'companyA'});
     });
 
     it(": empty condition", function () {
