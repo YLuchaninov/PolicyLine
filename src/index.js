@@ -1,6 +1,13 @@
 import {parseExp, executeExp, Operator, Mutator} from './target';
 import {prepareCollection} from './shared';
 import Adapter from './adapter';
+import {
+    createTokens,
+    infixToRPN,
+    fillTokens,
+    evaluateRPN,
+    wrapToToken
+} from './expression';
 
 const _property = Symbol(); // inner property name
 const USER = 'user.';
@@ -15,21 +22,21 @@ function checkOperand(oper, objStr) {
 }
 
 function collectResult(obj, data, property, resourceName) {
-    const context = {}, results = [];
+    const context = {}, targetResults = [];
 
     obj[_property][property].forEach((expr) => {
-        results.push(prepareCollection(data, expr, context, resourceName));
+        targetResults.push(prepareCollection(data, expr, context, resourceName));
     });
 
-    return obj.adapter(results);
+    return obj.adapter(targetResults);
 }
 
-function prepareForNext(obj, _exp, propName, resourceName, callback) {
+function prepareForNext(obj, uniqID, _exp, propName, resourceName, callback) {
     const operators = Operator.list, exp = JSON.parse(JSON.stringify(_exp));
     let tempObj;
 
     if (checkOperand(exp.left, resourceName)) {
-        obj[_property][propName].push(exp);
+        obj[_property][propName][uniqID].push(exp);
     } else if (checkOperand(exp.right, resourceName)) {
         tempObj = exp.right;
         exp.right = exp.left;
@@ -38,10 +45,37 @@ function prepareForNext(obj, _exp, propName, resourceName, callback) {
             exp.operator = operators[exp.operator].reverse;
         }
 
-        obj[_property][propName].push(exp);
+        obj[_property][propName][uniqID].push(exp);
     } else if (callback) {
         callback(exp);
     }
+}
+
+function policyConstructor(jsonPolicy) {
+    let uniqID = Math.random().toString(36).substr(2, 9);
+    this[_property] = {
+        expression: [wrapToToken(uniqID)],
+        target: {[uniqID]: []},
+        condition: {[uniqID]: []},
+        watcher: {[uniqID]: []},
+    };
+
+    jsonPolicy.target
+        .map(expStr => parseExp(expStr))
+        .forEach((_exp) => {
+            // collect watchers
+            prepareForNext(this, uniqID, _exp, WATCHER, USER);
+
+            // collect conditions, if it is not a condition, paste it to target array
+            prepareForNext(this, uniqID, _exp, CONDITION, RESOURCE, (exp) => {
+                this[_property].target[uniqID].push(exp);
+            });
+        });
+
+    return uniqID;
+}
+
+function groupConstructor(jsonPolicy) {
 }
 
 class Policy {
@@ -49,49 +83,45 @@ class Policy {
     constructor(jsonPolicy) {
         this.adapter = Adapter.MongoJSONb;
 
-        this[_property] = {
-            effect: jsonPolicy.effect !== DENY,
-            target: [],
-            condition: [],
-            watcher: [],
-            lastData: null
-        };
+        if (jsonPolicy.hasOwnProperty('target')) {
+            policyConstructor.call(this, jsonPolicy);
+        } else {
+            groupConstructor(jsonPolicy);
 
-        jsonPolicy.target
-            .map(expStr => parseExp(expStr))
-            .forEach((_exp) => {
-                prepareForNext(this, _exp, WATCHER, USER);
-                prepareForNext(this, _exp, CONDITION, RESOURCE, (exp) => {
-                    this[_property].target.push(exp);
-                });
-            });
+        }
+        this[_property].effect = jsonPolicy.effect !== DENY;
+        this[_property].lastData = null;
     }
 
     check(data) {
-        const context = {}, results = {};
-        let result = true;
+        const resultCollection = {};
 
-        // execute expressions(targets)
-        this[_property].target.forEach((targetExp) => {
-            let key, tmp;
+        for (const policyKey in this[_property].target) {
+            const context = {}, targetResults = {};
 
-            // generate unique random key
-            key = Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+            resultCollection[policyKey] = true;
 
-            tmp = executeExp(data, targetExp, context, key);
-            if (typeof tmp === BOOL) {
-                results[key] = tmp;
-            } else {
-                Object.assign(results, tmp);
-            }
-        });
+            this[_property].target[policyKey].forEach((targetExp) => {
+                // generate unique random key
+                const key = Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+                const tmp = executeExp(data, targetExp, context, key);
 
-        // calculate final result
-        Object.values(results).forEach((value) => {
-            result = result && value;
-        });
+                if (typeof tmp === BOOL) {
+                    targetResults[key] = tmp;
+                } else {
+                    Object.assign(targetResults, tmp);
+                }
+            });
 
-        // apply effect to result & return
+            // calculate final result
+            Object.values(targetResults).forEach((value) => {
+                resultCollection[policyKey] = resultCollection[policyKey] && value;
+            });
+        }
+
+        let result = evaluateRPN(fillTokens(this[_property].expression, resultCollection)).res;
+
+        // apply effect to bool result
         result = this[_property].effect ? result : !result;
 
         // save data for next `getConditions` methods

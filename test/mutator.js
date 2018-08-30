@@ -178,7 +178,7 @@ describe("Mutators Checking", function () {
         let policy = new Policy(rules);
         let data = {
             action: {
-                date: 'Jul 11 2018 21:48:30 GMT+0300'
+                date: 'Jul 11 2018 21:48:30'
             }
         };
 
@@ -199,7 +199,7 @@ describe("Mutators Checking", function () {
         let policy = new Policy(rules);
         let data = {
             action: {
-                date: new Date('Jul 11 2018 21:48:30 GMT+0300')
+                date: new Date('Jul 11 2018 21:48:30')
             }
         };
 
@@ -220,7 +220,7 @@ describe("Mutators Checking", function () {
         let policy = new Policy(rules);
         let data = {
             action: {
-                date: 'Jul 11 2018 21:48:30 GMT+0300'
+                date: 'Jul 11 2018 21:48:30'
             }
         };
 
