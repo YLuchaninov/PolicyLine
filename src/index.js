@@ -2,8 +2,8 @@ import {parseExp, executeExp, Operator, Mutator} from './target';
 import {prepareCollection} from './shared';
 import Adapter from './adapter';
 import {
-    // createTokens,
-    // infixToRPN,
+    createTokens,
+    infixToRPN,
     fillTokens,
     evaluateRPN,
     wrapToToken
@@ -77,7 +77,29 @@ function policyConstructor(jsonPolicy) {
     return uniqID;
 }
 
+function aggregateResult(policy, type, data) {
+    const rules = {}, result = {}, resource = type === CONDITION ? RESOURCE : USER;
+
+    Object.keys(policy[_property][type]).forEach((key) => {
+        try {
+            rules[key] = collectResult(policy, data, type, key, resource);
+        } catch (error) {
+            // important to close error in calculate result
+        }
+    });
+
+    let array = Object.entries(rules);
+    array.forEach((item) => {
+        if (policy[_calcResult].val.includes(item[0])) {
+            mergeDeep(result, item[1]);
+        }
+    });
+
+    return result;
+}
+
 function groupConstructor(jsonPolicy) {
+    // todo
 }
 
 class Policy {
@@ -142,73 +164,30 @@ class Policy {
 
         currentData = currentData || {};
 
-        let data = {
+        const data = {
             user: mergeDeep(currentData.user, this[_property].lastData.user),
             action: mergeDeep(currentData.action, this[_property].lastData.action),
             env: mergeDeep(currentData.env, this[_property].lastData.env),
             resource: mergeDeep(currentData.resource, this[_property].lastData.resource)
         };
 
-        try {
-            let conditions = {}, condition = {};
-            Object.keys(this[_property].condition).forEach((key) => {
-                try {
-                    conditions[key] = collectResult(this, this[_property].lastData, CONDITION, key, RESOURCE);
-                } catch (error) {
-                    // important to close error in calculate condition
-                }
-            });
-
-
-            let array = Object.entries(conditions);
-            array.forEach((item) => {
-                if (this[_calcResult].val.includes(item[0])) {
-                    mergeDeep(condition, item[1]);
-                }
-            });
-
-            data = mergeDeep(condition, data.resource);
-        } catch (e) {
-            data = e;
-        }
+        const result = mergeDeep(aggregateResult(this, CONDITION, this[_property].lastData), data.resource);
 
         this[_calcResult] = {};
         this[_property].lastData = undefined;
 
-        return data;
+        return result;
     }
 
     getWatchers(data) {
         this.check(data);
 
-        try {
-            let watchers = {}, watcher = {};
-            Object.keys(this[_property].watcher).forEach((key) => {
-                try {
-                    watchers[key] = collectResult(this, data, WATCHER, key, USER);
-                } catch (error) {
-                    // important to close error in calculate watcher
-                }
-            });
-
-
-            let array = Object.entries(watchers);
-            array.forEach((item) => {
-                if (this[_calcResult].val.includes(item[0])) {
-                    mergeDeep(watcher, item[1]);
-                }
-            });
-
-            // we should not merge with data.user like data = mergeDeep(watcher, data.user);
-            data = watcher;
-        } catch (e) {
-            data = e;
-        }
+        const result = aggregateResult(this, WATCHER, data);
 
         this[_calcResult] = {};
         this[_property].lastData = undefined;
 
-        return data;
+        return result;
     }
 }
 
