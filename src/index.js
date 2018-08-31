@@ -98,7 +98,7 @@ class Policy {
     check(data) {
         const resultCollection = {};
 
-        for (const policyKey in this[_property].target) {
+        Object.keys(this[_property].target).forEach((policyKey) => {
             const context = {}, targetResults = {};
 
             resultCollection[policyKey] = true;
@@ -119,7 +119,7 @@ class Policy {
             Object.values(targetResults).forEach((value) => {
                 resultCollection[policyKey] = resultCollection[policyKey] && value;
             });
-        }
+        });
 
         this[_calcResult] = evaluateRPN(fillTokens(this[_property].expression, resultCollection));
 
@@ -172,11 +172,43 @@ class Policy {
             data = e;
         }
 
+        this[_calcResult] = {};
+        this[_property].lastData = undefined;
+
         return data;
     }
 
     getWatchers(data) {
-        //return collectResult(this, data, WATCHER, key, USER);
+        this.check(data);
+
+        try {
+            let watchers = {}, watcher = {};
+            Object.keys(this[_property].watcher).forEach((key) => {
+                try {
+                    watchers[key] = collectResult(this, data, WATCHER, key, USER);
+                } catch (error) {
+                    // important to close error in calculate watcher
+                }
+            });
+
+
+            let array = Object.entries(watchers);
+            array.forEach((item) => {
+                if (this[_calcResult].val.includes(item[0])) {
+                    mergeDeep(watcher, item[1]);
+                }
+            });
+
+            // we should not merge with data.user like data = mergeDeep(watcher, data.user);
+            data = watcher;
+        } catch (e) {
+            data = e;
+        }
+
+        this[_calcResult] = {};
+        this[_property].lastData = undefined;
+
+        return data;
     }
 }
 
