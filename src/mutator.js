@@ -71,7 +71,12 @@ const mutators = {
     'year': (a) => (extractDate(a).getFullYear()), // according to the local time
 
     'regExp': (a) => {
-        const position = a.lastIndexOf('/');
+        let position = a.lastIndexOf('/');
+
+        if (position === -1) {
+            position = a.length;
+        }
+
         const exp = a.substring(0, position);
         const flags = a.substring(position + 1, a.length);
         return flags && flags.length ? new RegExp(exp, flags) : new RegExp(exp);

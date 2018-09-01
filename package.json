@@ -1,6 +1,6 @@
 {
   "name": "policyline",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "description": "Attributes Based Access Control library for Node.JS",
   "main": "dist/policyline.min.js",
   "scripts": {
@@ -51,15 +51,15 @@
   },
   "homepage": "https://github.com/YLuchaninov/PolicyLine#readme",
   "devDependencies": {
-    "babel-core": "^6.26.0",
-    "babel-loader": "^7.1.5",
-    "babel-preset-es2015": "^6.24.1",
-    "chai": "^4.1.2",
-    "mocha": "^4.0.1",
-    "webpack": "^4.15.1",
-    "webpack-command": "^0.4.1"
+    "babel-core": "~6.26.0",
+    "babel-loader": "~7.1.5",
+    "babel-preset-es2015": "~6.24.1",
+    "chai": "~4.1.2",
+    "mocha": "~4.0.1",
+    "webpack": "~4.15.1",
+    "webpack-command": "~0.4.1"
   },
   "dependencies": {
-    "moment": "^2.20.1"
+    "moment": "~2.20.1"
   }
 }

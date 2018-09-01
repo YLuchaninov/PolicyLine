@@ -73,8 +73,6 @@ function policyConstructor(jsonPolicy) {
                 this[_property].target[uniqID].push(exp);
             });
         });
-
-    return uniqID;
 }
 
 function aggregateResult(policy, type, data) {
@@ -99,7 +97,31 @@ function aggregateResult(policy, type, data) {
 }
 
 function groupConstructor(jsonPolicy) {
-    // todo
+    this[_property] = {
+        expression: infixToRPN(createTokens(jsonPolicy.expression)),
+        target: {},
+        condition: {},
+        watcher: {},
+    };
+
+    Object.keys(jsonPolicy.policies).forEach((key) => {
+        const policy = jsonPolicy.policies[key];
+        this[_property].target[key] = [];
+        this[_property].condition[key] = [];
+        this[_property].watcher[key] = [];
+
+        policy.target
+            .map(expStr => parseExp(expStr))
+            .forEach((_exp) => {
+                // collect watchers
+                prepareForNext(this, key, _exp, WATCHER, USER);
+
+                // collect conditions, if it is not a condition, paste it to target array
+                prepareForNext(this, key, _exp, CONDITION, RESOURCE, (exp) => {
+                    this[_property].target[key].push(exp);
+                });
+            });
+    });
 }
 
 class Policy {
@@ -110,14 +132,13 @@ class Policy {
         if (jsonPolicy.hasOwnProperty('target')) {
             policyConstructor.call(this, jsonPolicy);
         } else {
-            groupConstructor(jsonPolicy);
-
+            groupConstructor.call(this, jsonPolicy);
         }
         this[_property].effect = jsonPolicy.effect !== DENY;
         this[_property].lastData = null;
     }
 
-    check(data) {
+    check(data = {}) {
         const resultCollection = {};
 
         Object.keys(this[_property].target).forEach((policyKey) => {
@@ -159,7 +180,7 @@ class Policy {
     }
 
     getConditions(currentData) {
-        if (this[_property].lastData === undefined)
+        if ((this[_property].effect ? this[_calcResult].res : !this[_calcResult].res) === false)
             return undefined;
 
         currentData = currentData || {};
