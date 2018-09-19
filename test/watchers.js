@@ -58,7 +58,6 @@ describe("Watchers Checking", function () {
                 role: 'admin'
             }
         };
-
         let watchers = policy.getWatchers(data);
         expect(Object.keys(watchers).length).equal(0);
     });
@@ -132,6 +131,103 @@ describe("Watchers Checking", function () {
         };
 
         expect(watchers).to.deep.equal(result);
+    });
+
+    it(": unresolved external dependency in watchers", function () {
+        let rules =  {
+            target: [
+                'user.role="admin"',
+                'user.company=resource.company', // <- unresolved external dependency to resource.
+            ]
+        };
+
+        let data = {
+            user: {
+                role: 'admin',
+                company: 'companyA'
+            }
+        };
+
+        let policy = new Policy(rules);
+        let watchers = policy.getWatchers(data);
+        expect(watchers).to.equal(undefined);
+    });
+
+    it(": group watchers", function () {
+        let policyGroup = { // all algorithms set in 'all' by default
+            expression: '(admin OR super_admin)OR(user AND location)',
+            policies: {
+                admin: {
+                    target: [
+                        'user.role="admin"',
+                        'user.company=resource.company',
+                    ]
+                },
+                super_admin: {
+                    target: [
+                        "user.role='super_admin'"
+                    ]
+                },
+                user: {
+                    target: [
+                        "user.role='user'"
+                    ]
+                },
+                location: {
+                    target: [
+                        "user.location=env.location"
+                    ]
+                },
+            }
+        };
+
+        let data = {
+            resource: {
+                company:'companyA',
+            },
+            user: {
+                role: 'admin',
+                company: 'companyA'
+            }
+        };
+
+        let policy = new Policy(policyGroup);
+        let watchers = policy.getWatchers(data);
+        let result = {role: 'admin', company: 'companyA'};
+        expect(watchers).to.deep.equal(result);
+    });
+
+    it(": group watchers - unresolved external dependency", function () {
+        let policyGroup = { // all algorithms set in 'all' by default
+            expression: '(admin OR super_admin)OR(user AND location)',
+            policies: {
+                admin: {
+                    target: [
+                        'user.role="admin"',
+                        'user.company=resource.company',
+                    ]
+                },
+                super_admin: {
+                    target: [
+                        "user.role='super_admin'"
+                    ]
+                },
+                user: {
+                    target: [
+                        "user.role='user'"
+                    ]
+                },
+                location: {
+                    target: [
+                        "user.location=env.location"
+                    ]
+                },
+            }
+        };
+
+        let policy = new Policy(policyGroup);
+        let watchers = policy.getWatchers({});
+        expect(watchers).to.equal(undefined);
     });
 
 });

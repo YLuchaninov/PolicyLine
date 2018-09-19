@@ -29,7 +29,7 @@ describe("Policy Group", function () {
                 },
                 super_admin: {
                     target: [
-                        "user.role='admin'"
+                        "user.role='super_admin'"
                     ],
                     effect: "permit"
                 }
