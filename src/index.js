@@ -77,50 +77,56 @@ function policyConstructor(jsonPolicy) {
         });
 }
 
+function aggregateResult(policy, type, data) {
+    const rules = {}, result = {}, resource = type === CONDITION ? RESOURCE : USER;
+    let keys;
+
+    Object.keys(policy[_property][type]).forEach((key) => {
+        try {
+            rules[key] = collectResult(policy, data, type, key, resource);
+
+            if (dependencyGuard(rules[key])) {
+                rules[key] = undefined;
+            }
+        } catch (error) {
+            // important to close error in calculate result
+        }
+    });
+
+    const array = Object.entries(rules);
+
+    if (type === CONDITION) {
+        keys = policy[_calcResult].val;
+    } else {
+        keys = Object.keys(rules); // todo create correct operands array
+    }
+
+    array.forEach((item) => {
+        if (keys.includes(item[0])) {
+            console.log(item[1]); // todo process correct 'undefined'
+            mergeDeep(result, item[1]);
+        }
+    });
+
+    return result;
+}
+
 function dependencyGuard(obj) {
     let flag = false;
-    Object.keys(obj).forEach((key)=>{
+    Object.keys(obj).forEach((key) => {
         if (typeof obj[key] === 'string' && (
             obj[key].indexOf(USER) === 0 ||
             obj[key].indexOf(RESOURCE) === 0 ||
             obj[key].indexOf(ENV) === 0 ||
             obj[key].indexOf(ACTION) === 0
         )) {
-            console.log(key, ' :: ',obj[key])
             flag = true;
-        } else if(typeof obj[key] === 'object') {
+        } else if (typeof obj[key] === 'object') {
             flag = dependencyGuard(obj[key]);
         }
     });
 
     return flag;
-}
-
-function aggregateResult(policy, type, data) {
-    const rules = {}, resource = type === CONDITION ? RESOURCE : USER;
-
-    Object.keys(policy[_property][type]).forEach((key) => {
-        try {
-            rules[key] = collectResult(policy, data, type, key, resource);
-        } catch (error) {
-            // important to close error in calculate result
-        }
-    });
-
-    let array = Object.entries(rules);
-
-    let result = undefined;
-    if (!dependencyGuard(rules)) { // todo add expression operands evaluation
-        const keys = (policy[_calcResult] && policy[_calcResult].val) ? policy[_calcResult].val : Object.keys(rules);
-        result = {};
-        array.forEach((item) => {
-            if (keys && keys.includes(item[0])) {
-                mergeDeep(result, item[1]);
-            }
-        });
-    }
-
-    return result;
 }
 
 function groupConstructor(jsonPolicy) {
