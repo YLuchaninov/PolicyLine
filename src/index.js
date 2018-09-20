@@ -78,8 +78,7 @@ function policyConstructor(jsonPolicy) {
 }
 
 function aggregateResult(policy, type, data) {
-    const rules = {}, result = {}, resource = type === CONDITION ? RESOURCE : USER;
-    let keys;
+    const rules = {}, resource = type === CONDITION ? RESOURCE : USER;
 
     Object.keys(policy[_property][type]).forEach((key) => {
         try {
@@ -93,22 +92,7 @@ function aggregateResult(policy, type, data) {
         }
     });
 
-    const array = Object.entries(rules);
-
-    if (type === CONDITION) {
-        keys = policy[_calcResult].val;
-    } else {
-        keys = Object.keys(rules); // todo create correct operands array
-    }
-
-    array.forEach((item) => {
-        if (keys.includes(item[0])) {
-            console.log(item[1]); // todo process correct 'undefined'
-            mergeDeep(result, item[1]);
-        }
-    });
-
-    return result;
+    return rules;
 }
 
 function dependencyGuard(obj) {
@@ -225,12 +209,19 @@ class Policy {
             resource: mergeDeep(currentData.resource, this[_property].lastData.resource)
         };
 
-        const result = mergeDeep(aggregateResult(this, CONDITION, this[_property].lastData), data.resource);
+        const rules = aggregateResult(this, CONDITION, this[_property].lastData);
+
+        const result = {};
+        Object.entries(rules).forEach((item) => {
+            if (this[_calcResult].val.includes(item[0])) {
+                mergeDeep(result, item[1]);
+            }
+        });
 
         this[_calcResult] = {};
         this[_property].lastData = undefined;
 
-        return result;
+        return mergeDeep(result, data.resource);
     }
 
     getWatchers(data) {
@@ -238,7 +229,16 @@ class Policy {
             delete data.user;
         }
 
-        const result = aggregateResult(this, WATCHER, data);
+        const rules = aggregateResult(this, WATCHER, data);
+
+        ////// todo
+        const result = {};
+        const keys = Object.keys(rules); // todo change to expression evaluation
+        Object.entries(rules).forEach((item) => {
+            if (keys.includes(item[0])) {
+                mergeDeep(result, item[1]);
+            }
+        });
 
         this[_calcResult] = {};
         this[_property].lastData = undefined;
