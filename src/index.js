@@ -2,6 +2,7 @@ import {parseExp, executeExp, Operator, Mutator} from './target';
 import {prepareCollection} from './shared';
 import Adapter from './adapter';
 import {
+    processRPN,
     createTokens,
     infixToRPN,
     fillTokens,
@@ -230,20 +231,8 @@ class Policy {
         }
 
         const rules = aggregateResult(this, WATCHER, data);
-
-        ////// todo
-        const result = {};
-        const keys = Object.keys(rules); // todo change to expression evaluation
-        Object.entries(rules).forEach((item) => {
-            if (keys.includes(item[0])) {
-                mergeDeep(result, item[1]);
-            }
-        });
-
-        this[_calcResult] = {};
-        this[_property].lastData = undefined;
-
-        return result;
+        const result = processRPN(fillTokens(this[_property].expression, rules));
+        return result ? result.res : undefined;
     }
 }
 

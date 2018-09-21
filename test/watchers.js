@@ -134,7 +134,7 @@ describe("Watchers Checking", function () {
     });
 
     it(": unresolved external dependency in watchers", function () {
-        let rules =  {
+        let rules = {
             target: [
                 'user.role="admin"',
                 'user.company=resource.company', // <- unresolved external dependency to resource.
@@ -183,17 +183,45 @@ describe("Watchers Checking", function () {
 
         let data = {
             resource: {
-                company:'companyA',
+                company: 'companyA',
             },
             user: {
                 role: 'admin',
                 company: 'companyA'
+            },
+            env: {
+                location: 'NY'
             }
         };
 
         let policy = new Policy(policyGroup);
         let watchers = policy.getWatchers(data);
-        let result = {role: 'admin', company: 'companyA'};
+
+        let result = {
+            "$or": [
+                {
+                    "$and": [ // todo check correct
+                        {
+                            "location": "NY"
+                        },
+                        {
+                            "role": "user"
+                        }
+                    ]
+                },
+                {
+                    "$or": [
+                        {
+                            "role": "super_admin"
+                        },
+                        {
+                            "role": "admin",
+                            "company": "companyA"
+                        }
+                    ]
+                }
+            ]
+        };
         expect(watchers).to.deep.equal(result);
     });
 
@@ -226,8 +254,11 @@ describe("Watchers Checking", function () {
         };
 
         let policy = new Policy(policyGroup);
-        let watchers = policy.getWatchers({});
-        expect(watchers).to.equal(undefined);
+        let watchers = policy.getWatchers();
+        let result = {
+            role: 'super_admin'
+        };
+        expect(watchers).to.deep.equal(result);
     });
 
 });

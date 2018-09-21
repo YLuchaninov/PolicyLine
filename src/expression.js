@@ -119,7 +119,57 @@ function evaluateRPN(tokens) {
     return stack.pop();
 }
 
+
+function processRPN(tokens) {
+    const stack = [];
+
+    while (tokens.length) {
+        const token = tokens.shift();
+
+        if (token.type === TYPE.val) {
+            stack.push(token);
+            continue;
+        }
+
+        const rhs = stack.pop();
+        const lhs = stack.pop();
+
+        switch (token.val) {
+            case 'OR':
+                if (rhs && lhs && rhs.res && lhs.res) {
+                    stack.push({
+                        type: TYPE.val,
+                        res: { // todo
+                            '$or': [rhs.res, lhs.res]
+                        }
+                    });
+                } else {
+                    if (rhs && rhs.res) {
+                        stack.push(rhs);
+                    }
+                    if (lhs && lhs.res) {
+                        stack.push(lhs);
+                    }
+                }
+                break;
+            case 'AND':
+                if (rhs && lhs && rhs.res && lhs.res) {
+                    stack.push({
+                        type: TYPE.val,
+                        res: { // todo
+                            '$and': [rhs.res, lhs.res]
+                        }
+                    });
+                }
+                break;
+        }
+    }
+
+    return stack.pop();
+}
+
 export {
+    processRPN,
     createTokens,
     infixToRPN,
     fillTokens,
