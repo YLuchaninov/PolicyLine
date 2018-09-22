@@ -33,7 +33,7 @@ function collectResult(obj, data, property, key, resourceName) {
         targetResults.push(prepareCollection(data, expr, context, resourceName));
     });
 
-    return obj.adapter(targetResults);
+    return obj.adapter.proceed(targetResults);
 }
 
 function prepareForNext(obj, uniqID, _exp, propName, resourceName, callback) {
@@ -231,8 +231,8 @@ class Policy {
         }
 
         const rules = aggregateResult(this, WATCHER, data);
-        const result = processRPN(fillTokens(this[_property].expression, rules));
-        return result ? result.res : undefined;
+        const result = processRPN(fillTokens(this[_property].expression, rules), this.adapter);
+        return result ? this.adapter.optimize(result.res) : undefined;
     }
 }
 

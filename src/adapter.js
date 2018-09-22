@@ -1,5 +1,35 @@
-const Adapter = {
-    MongoJSONb: rules => {
+
+function optimize(exp) {
+    if (typeof  exp === 'object')
+            Object.keys(exp).forEach((key) => {
+                if (key === '$or') {
+                    for (let i = exp[key].length - 1; i >= 0; i--) {
+                        let obj = exp[key][i];
+                        if (obj['$or']) {
+                            for (let j = obj['$or'].length - 1; j >= 0; j--) {
+                                exp[key].push(obj['$or'][j])
+                            }
+                            exp[key].splice(i, 1);
+                        }
+                    }
+                } else if (typeof exp[key] === 'object') {
+                    exp[key] = optimize(exp[key]);
+                }
+            });
+        return exp;
+}
+
+const MongoJSONb = {
+
+    and: (a, b) => (Object.assign(a, b)),
+
+    or: (a, b) => ({
+        '$or': [a, b]
+    }),
+
+    optimize: optimize,
+
+    proceed: rules => {
         const OperatorMap = {
             '=': '$eq',	//Matches values that are equal to a specified value.
             '==': '$eq', //Matches values that are equal to a specified value.
@@ -67,7 +97,11 @@ const Adapter = {
         });
 
         return result;
-    },
+    }
+};
+
+const Adapter = {
+    MongoJSONb: MongoJSONb,
 };
 
 export default Adapter;

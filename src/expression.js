@@ -120,7 +120,7 @@ function evaluateRPN(tokens) {
 }
 
 
-function processRPN(tokens) {
+function processRPN(tokens, adapter) {
     const stack = [];
 
     while (tokens.length) {
@@ -139,9 +139,7 @@ function processRPN(tokens) {
                 if (rhs && lhs && rhs.res && lhs.res) {
                     stack.push({
                         type: TYPE.val,
-                        res: { // todo
-                            '$or': [rhs.res, lhs.res]
-                        }
+                        res: adapter.or(rhs.res, lhs.res)
                     });
                 } else {
                     if (rhs && rhs.res) {
@@ -156,9 +154,7 @@ function processRPN(tokens) {
                 if (rhs && lhs && rhs.res && lhs.res) {
                     stack.push({
                         type: TYPE.val,
-                        res: { // todo
-                            '$and': [rhs.res, lhs.res]
-                        }
+                        res: adapter.and(rhs.res, lhs.res)
                     });
                 }
                 break;

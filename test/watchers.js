@@ -200,26 +200,16 @@ describe("Watchers Checking", function () {
         let result = {
             "$or": [
                 {
-                    "$and": [ // todo check correct
-                        {
-                            "location": "NY"
-                        },
-                        {
-                            "role": "user"
-                        }
-                    ]
+                    "location": "NY",
+                    "role": "user"
                 },
                 {
-                    "$or": [
-                        {
-                            "role": "super_admin"
-                        },
-                        {
-                            "role": "admin",
-                            "company": "companyA"
-                        }
-                    ]
-                }
+                    "role": "admin",
+                    "company": "companyA"
+                },
+                {
+                    "role": "super_admin"
+                },
             ]
         };
         expect(watchers).to.deep.equal(result);
