@@ -2,7 +2,7 @@
 # PolicyLine
 Node.JS attribute based access control library
 
-Original Russian documentation [here](./docs/README.ru.md)
+Original Russian documentation [here](./docs/README.ru.md) (old version)
 
 ## What is it
 
@@ -21,8 +21,26 @@ More details here:
 
 A tool is needed to change the business rules regarding access, without rewriting the server code.
 
+## Disclaimer
 
-### Differences from other libraries:
+> The current version of the documentation refers to version 1.x.x . At the moment, we done and tested version 2.0.0 of library.
+
+> Please use the current version of the documentation only for familiarization with the principles of use, for the uderstanding of ideas, for details of using, plz see the tests.
+
+### Changelog (v.1.x.x -> v.2.x.x)
+
+* Now the library supports not only ABAC and ABM. You can use reverse conditions for sampling of watchers for ABM (Attribute Based Messages)
+* Modification of exprassion by alogorithms has been removed. At the moment, all the conditions in the policy must be fulfilled. This was done, since algorithms contradict the conditions and this functional is completely covered by expressions in groups
+* Condition and target are now combined in target, and the conditions are automatically allocated from the resource
+* `and` and` or` methods are deleted from the policies, you can now simply create groups with expressions
+* More strict syntax rules
+* Verification of semantics
+* Operator overloading
+* Now the default effect is permit
+* Mutations of expression operands
+
+
+## Differences from other libraries:
 
 1. Rules are based on attributes, not roles, which saves you from having to introduce permissions (permissions).
 2. Allows you to dynamically change access rules based on attributes without changing the application code (without rewriting), since all business rules are specified in the JSON format.
