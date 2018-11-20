@@ -197,18 +197,12 @@ class Policy {
         this.adapter = adapter;
     }
 
-    getConditions(currentData) {
+    getConditions() {
         if ((this[_property].effect ? this[_calcResult].res : !this[_calcResult].res) === false)
             return undefined;
 
-        currentData = currentData || {};
-
-        const data = {
-            user: mergeDeep(currentData.user, this[_property].lastData.user),
-            action: mergeDeep(currentData.action, this[_property].lastData.action),
-            env: mergeDeep(currentData.env, this[_property].lastData.env),
-            resource: mergeDeep(currentData.resource, this[_property].lastData.resource)
-        };
+        const resource = this[_property].lastData.resource;
+        this[_property].lastData.resource = null;
 
         const rules = aggregateResult(this, CONDITION, this[_property].lastData);
 
@@ -222,7 +216,7 @@ class Policy {
         this[_calcResult] = {};
         this[_property].lastData = undefined;
 
-        return mergeDeep(result, data.resource);
+        return mergeDeep(result, resource);
     }
 
     getWatchers(data) {

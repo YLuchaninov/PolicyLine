@@ -27,6 +27,35 @@ describe("Conditions Checking", function () {
         expect(conditions).to.deep.equal(result);
     });
 
+    it(": positive case condition with mixin", function () {
+        let rules = {
+            target: [
+                'resource.author=user.cuid',
+                'resource.company="company_c"'
+            ]
+        };
+
+        let policy = new Policy(rules);
+        let data = {
+            user: {
+                cuid: '873n4y2xn4'
+            },
+            resource: {
+                id: '98245n524n'
+            }
+        };
+
+        expect(policy.check(data)).to.equal(true);
+
+        let conditions = policy.getConditions();
+        let result = {
+            id: '98245n524n',
+            author: '873n4y2xn4',
+            company: 'company_c'
+        };
+        expect(conditions).to.deep.equal(result);
+    });
+
     it(": double condition checking", function () {
         let rules = {
             target: [
