@@ -77,8 +77,7 @@ function policyConstructor(policy) {
     this[_property] = {
         expression: [wrapToToken(key)],
         target: {[key]: []},
-        condition: {[key]: []},
-        watcher: {[key]: []},
+        filterTarget: {[key]: []},
     };
 
     policyParse(policy, key, this);
@@ -88,15 +87,13 @@ function groupConstructor(jsonPolicy) {
     this[_property] = {
         expression: infixToRPN(createTokens(jsonPolicy.expression)),
         target: {},
-        condition: {},
-        watcher: {},
+        filterTarget: {},
     };
 
     Object.keys(jsonPolicy.policies).forEach((key) => {
         const policy = jsonPolicy.policies[key];
         this[_property].target[key] = [];
-        this[_property].condition[key] = [];
-        this[_property].watcher[key] = [];
+        this[_property].filterTarget[key] = [];
 
         policyParse(policy, key, this);
     });
@@ -130,10 +127,21 @@ function policyParse(policy, key, context) {
   policy.target
         .map(expStr => parseExp(expStr))
         .forEach((_exp) => {
-            // prepareFor(WATCHER, key, context, _exp);
-            // prepareFor(CONDITION, key, context, _exp);
             context[_property].target[key].push(_exp);
         });
+}
+
+function attributeCheck(obj) {
+    const attrs = ['user', 'resource', 'action', 'env'];
+    if (typeof obj === 'object') {
+        Object.keys(obj).forEach((attr) => {
+            const index = attrs.indexOf(attr);
+            if (index > -1) {
+                attrs.splice(index, 1);
+            }
+        });
+    }
+    return attrs;
 }
 
 class Policy {
@@ -150,10 +158,18 @@ class Policy {
         this[_property].lastData = null;
     }
 
-    check(data = {}) {
+    check(data) {
+        // guard part
+        const missingAttrs = attributeCheck(data);
+        if (missingAttrs.length > 1) {
+            throw new Error(data.toString() + 'should contain any more than two attributes from: "user", "action", "resource" or "env"');
+        }
+
+        const filterTarget = missingAttrs[0];
+
+        // clear storage
         Object.keys(this[_property].target).forEach((key) => {
-            this[_property].condition[key] = [];
-            this[_property].watcher[key] = [];
+            this[_property].filterTarget[key] = [];
         });
 
         const resultCollection = {};
@@ -167,13 +183,13 @@ class Policy {
             this[_property].target[policyKey].forEach((targetExp) => {
                 // generate unique random key
                 const key = Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
-                const tmp = executeExp(data, targetExp, context, key);
+                const tmp = executeExp(data, targetExp, context, key, filterTarget);
 
                 if (typeof tmp === BOOL) {
                     targetResults[key] = tmp;
                 } else if (typeof tmp === 'object' && tmp.flag) {
-                  prepareFor(WATCHER, policyKey, this, targetExp);
-                  prepareFor(CONDITION, policyKey, this, targetExp);
+                  // prepareFor(WATCHER, policyKey, this, targetExp);
+                  // prepareFor(CONDITION, policyKey, this, targetExp);
                 } else {
                     Object.assign(targetResults, tmp);
                 }
@@ -181,7 +197,6 @@ class Policy {
 
             // calculate final result for single policy
             Object.values(targetResults).forEach((value) => {
-                console.log(targetResults, value)
                 resultCollection[policyKey] = resultCollection[policyKey] && value;
             });
         });
@@ -204,35 +219,35 @@ class Policy {
     }
 
     getConditions() {
-        if ((this[_property].effect ? this[_calcResult].res : !this[_calcResult].res) === false)
-            return undefined;
-
-        const resource = this[_property].lastData.resource;
-        this[_property].lastData.resource = null;
-
-        const rules = aggregateResult(this, CONDITION, this[_property].lastData);
-
-        const result = {};
-        Object.entries(rules).forEach((item) => {
-            if (this[_calcResult].val.includes(item[0])) {
-                mergeDeep(result, item[1]);
-            }
-        });
-
-        this[_calcResult] = {};
-        this[_property].lastData = undefined;
-
-        return mergeDeep(result, resource);
+        // if ((this[_property].effect ? this[_calcResult].res : !this[_calcResult].res) === false)
+        //     return undefined;
+        //
+        // const resource = this[_property].lastData.resource;
+        // this[_property].lastData.resource = null;
+        //
+        // const rules = aggregateResult(this, CONDITION, this[_property].lastData);
+        //
+        // const result = {};
+        // Object.entries(rules).forEach((item) => {
+        //     if (this[_calcResult].val.includes(item[0])) {
+        //         mergeDeep(result, item[1]);
+        //     }
+        // });
+        //
+        // this[_calcResult] = {};
+        // this[_property].lastData = undefined;
+        //
+        // return mergeDeep(result, resource);
     }
 
     getWatchers(data) {
-        if (data) { // remove external dependency on data.user
-            delete data.user;
-        }
-
-        const rules = aggregateResult(this, WATCHER, data);
-        const result = processRPN(fillTokens(this[_property].expression, rules), this.adapter);
-        return result ? this.adapter.optimize(result.res) : undefined;
+        // if (data) { // remove external dependency on data.user
+        //     delete data.user;
+        // }
+        //
+        // const rules = aggregateResult(this, WATCHER, data);
+        // const result = processRPN(fillTokens(this[_property].expression, rules), this.adapter);
+        // return result ? this.adapter.optimize(result.res) : undefined;
     }
 }
 

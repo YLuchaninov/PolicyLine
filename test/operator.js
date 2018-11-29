@@ -31,7 +31,8 @@ describe("Operators Checking", function () {
                 department: {
                     type: "R&D"
                 }
-            }
+            },
+            resource: {}
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -46,7 +47,8 @@ describe("Operators Checking", function () {
                 department: {
                     type: "sales"
                 }
-            }
+            },
+            resource: {}
         })).to.equal(false);
         expect(policy.check(data)).to.equal(true);
     });
@@ -62,7 +64,10 @@ describe("Operators Checking", function () {
         let data = {
             user: {
                 name: 'Joe'
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -79,7 +84,10 @@ describe("Operators Checking", function () {
         let data = {
             user: {
                 name: 'Sam'
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(false);
@@ -96,7 +104,10 @@ describe("Operators Checking", function () {
         let data = {
             user: {
                 name: 'Joe'
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -113,7 +124,10 @@ describe("Operators Checking", function () {
         let data = {
             user: {
                 name: 'Joe'
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(false);
@@ -130,7 +144,10 @@ describe("Operators Checking", function () {
         let data = {
             user: {
                 age: 35
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -147,7 +164,10 @@ describe("Operators Checking", function () {
         let data = {
             user: {
                 age: 25
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(false);
@@ -164,7 +184,10 @@ describe("Operators Checking", function () {
         let data = {
             user: {
                 age: 25
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -181,7 +204,10 @@ describe("Operators Checking", function () {
         let data = {
             user: {
                 age: 35
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(false);
@@ -198,7 +224,10 @@ describe("Operators Checking", function () {
         let data = {
             user: {
                 age: 31
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -215,7 +244,10 @@ describe("Operators Checking", function () {
         let data = {
             user: {
                 age: 30
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -232,7 +264,10 @@ describe("Operators Checking", function () {
         let data = {
             user: {
                 age: 10
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(false);
@@ -249,7 +284,10 @@ describe("Operators Checking", function () {
         let data = {
             user: {
                 age: 29
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -266,7 +304,10 @@ describe("Operators Checking", function () {
         let data = {
             user: {
                 age: 30
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -283,7 +324,10 @@ describe("Operators Checking", function () {
         let data = {
             user: {
                 age: 35
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(false);
@@ -300,7 +344,10 @@ describe("Operators Checking", function () {
         let data = {
             user: {
                 role: 'user'
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -317,7 +364,10 @@ describe("Operators Checking", function () {
         let data = {
             user: {
                 role: 'super_admin'
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(false);
@@ -334,7 +384,10 @@ describe("Operators Checking", function () {
         let data = {
             user: {
                 role: 'head_of_department'
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -351,7 +404,10 @@ describe("Operators Checking", function () {
         let data = {
             user: {
                 role: 'user'
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(false);
@@ -366,7 +422,10 @@ describe("Operators Checking", function () {
 
         let policy = new Policy(rules);
         let data = {
-            user: {}
+            user: {},
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -383,7 +442,10 @@ describe("Operators Checking", function () {
         let data = {
             user: {
                 role: 'developer'
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -400,7 +462,10 @@ describe("Operators Checking", function () {
         let data = {
             user: {
                 role: 'admin'
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(false);
@@ -423,7 +488,10 @@ describe("Operators Checking", function () {
         let data = {
             user: {
                 role: 'developer'
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -451,7 +519,10 @@ describe("Operators Checking", function () {
         let data = {
             user: {
                 role: 'admin'
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(false);
@@ -481,7 +552,10 @@ describe("Operators Checking", function () {
             user: {
                 custom: 'CUSTOMSTRING',
                 role: 'admin'
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -511,7 +585,10 @@ describe("Operators Checking", function () {
             user: {
                 custom: 'customString',
                 role: 'admin'
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(false);
@@ -535,7 +612,10 @@ describe("Operators Checking", function () {
             user: {
                 custom: 'customString',
                 role: 'admin'
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);

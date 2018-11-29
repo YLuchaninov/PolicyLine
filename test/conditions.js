@@ -17,7 +17,9 @@ describe("Conditions Checking", function () {
             user: {
                 role: 'admin',
                 company: 'companyA'
-            }
+            },
+            action: {},
+            env: {}
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -40,14 +42,17 @@ describe("Conditions Checking", function () {
             user: {
                 cuid: '873n4y2xn4'
             },
-            resource: {
-                id: '98245n524n'
-            }
+            action: {},
+            env: {}
         };
 
         expect(policy.check(data)).to.equal(true);
 
-        let conditions = policy.getConditions();
+        let conditions = policy.getConditions({
+            resource: {
+                id: '98245n524n'
+            },
+        });
         let result = {
             id: '98245n524n',
             author: '873n4y2xn4',
@@ -69,14 +74,16 @@ describe("Conditions Checking", function () {
             user: {
                 role: 'admin',
                 company: 'companyA'
-            }
+            },
+            action: {},
+            env: {}
         };
 
         expect(policy.check()).to.equal(false);
-        // expect(policy.getConditions()).to.equal(undefined);
-        //
-        // expect(policy.check(data)).to.equal(true);
-        // expect(policy.getConditions()).to.deep.equal({company: 'companyA'});
+        expect(policy.getConditions()).to.equal(undefined);
+
+        expect(policy.check(data)).to.equal(true);
+        expect(policy.getConditions()).to.deep.equal({company: 'companyA'});
     });
 
     it(": empty condition", function () {
@@ -90,7 +97,9 @@ describe("Conditions Checking", function () {
         let data = {
             user: {
                 role: 'admin'
-            }
+            },
+            action: {},
+            env: {}
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -111,7 +120,9 @@ describe("Conditions Checking", function () {
             user: {
                 role: 'developer',
                 company: 'companyA'
-            }
+            },
+            action: {},
+            env: {}
         };
 
         expect(policy.check(data)).to.equal(false);
@@ -142,7 +153,9 @@ describe("Conditions Checking", function () {
             user: {
                 location: [49.9935, 36.2304],
                 company: 'companyA'
-            }
+            },
+            action: {},
+            env: {}
         };
 
         expect(policy.check(data)).to.equal(true);

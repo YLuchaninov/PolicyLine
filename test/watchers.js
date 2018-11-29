@@ -15,11 +15,14 @@ describe("Watchers Checking", function () {
         let data = {
             resource: {
                 company: 'companyA'
-            }
+            },
+            action: {},
+            env: {},
         };
 
         let policy = new Policy(rules);
-        let watchers = policy.getWatchers(data);
+        expect(policy.check(data)).to.equal(true);
+        let watchers = policy.getWatchers();
 
         let result = {role: 'admin', company: 'companyA'};
         expect(watchers).to.deep.equal(result);
@@ -36,11 +39,14 @@ describe("Watchers Checking", function () {
         let data = {
             resource: {
                 company: 'companyA'
-            }
+            },
+            action: {},
+            env: {},
         };
 
         let policy = new Policy(rules);
-        policy.getWatchers(data);
+        expect(policy.check(data)).to.equal(true);
+        policy.getWatchers();
         let watchers = policy.getWatchers(data);
 
         let result = {role: 'admin', company: 'companyA'};
@@ -56,9 +62,12 @@ describe("Watchers Checking", function () {
         let data = {
             user: {
                 role: 'admin'
-            }
+            },
+            action: {},
+            env: {},
         };
-        let watchers = policy.getWatchers(data);
+        expect(policy.check(data)).to.equal(true);
+        let watchers = policy.getWatchers();
         expect(Object.keys(watchers).length).equal(0);
     });
 
@@ -85,10 +94,13 @@ describe("Watchers Checking", function () {
             resource: {
                 location: [49.9935, 36.2304],
                 company: 'companyA'
-            }
+            },
+            action: {},
+            env: {},
         };
 
-        let watchers = policy.getWatchers(data);
+        expect(policy.check(data)).to.equal(true);
+        let watchers = policy.getWatchers();
         let result = {
             "company": "companyA",
             "type": "inner",
@@ -145,11 +157,14 @@ describe("Watchers Checking", function () {
             user: {
                 role: 'admin',
                 company: 'companyA'
-            }
+            },
+            action: {},
+            env: {},
         };
 
         let policy = new Policy(rules);
-        let watchers = policy.getWatchers(data);
+        expect(policy.check(data)).to.equal(true);
+        let watchers = policy.getWatchers();
         expect(watchers).to.equal(undefined);
     });
 
@@ -185,17 +200,20 @@ describe("Watchers Checking", function () {
             resource: {
                 company: 'companyA',
             },
+            env: {
+                location: 'NY'
+            },
+            action: {},
+        };
+
+        let policy = new Policy(policyGroup);
+        expect(policy.check(data)).to.equal(true);
+        let watchers = policy.getWatchers({
             user: {
                 role: 'admin',
                 company: 'companyA'
             },
-            env: {
-                location: 'NY'
-            }
-        };
-
-        let policy = new Policy(policyGroup);
-        let watchers = policy.getWatchers(data);
+        });
 
         let result = {
             "$or": [
@@ -244,6 +262,11 @@ describe("Watchers Checking", function () {
         };
 
         let policy = new Policy(policyGroup);
+        expect(policy.check({
+            resource: {},
+            action: {},
+            env: {}
+        })).to.equal(true);
         let watchers = policy.getWatchers();
         let result = {
             role: 'super_admin'

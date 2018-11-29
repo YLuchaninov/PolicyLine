@@ -45,7 +45,9 @@ describe("Crooss Responsibility Checking", function () {
             author: 'cjot05axm000161s5g5ip0b96',
             company: 'company_b',
             cuid: 'cjot05b3k000861s5mpoiwd3e',
-          }
+          },
+          action: {},
+          env: {}
         };
         console.log(policy.check(data)) // todo should be false
       //const watchers = policy.getWatchers(data);

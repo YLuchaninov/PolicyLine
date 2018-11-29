@@ -78,7 +78,7 @@ function postfixApply(operand, data, context, key) {
     });
 }
 
-function executeExp(inputData, exp, context, key) {
+function executeExp(inputData, exp, context, key, filterTarget) {
     const operators = Operator.list;
     const leftOperand = extract(inputData, exp.left, context);
     const rightOperand = extract(inputData, exp.right, context);
@@ -103,6 +103,11 @@ function executeExp(inputData, exp, context, key) {
 
     postfixApply(exp.left, data, context, key);
     postfixApply(exp.right, data, context, key);
+
+
+    if (filterTarget && ((!data.leftIsData && data.leftValue === null) || (!data.rightIsData && data.rightValue === null))) {
+        console.log(filterTarget, ((exp.left.isDIObj && exp.left.value.indexOf(filterTarget) ===0) || (exp.right.isDIObj && exp.right.value.indexOf(filterTarget) ===0)))
+    }
 
     return data.result;
 }

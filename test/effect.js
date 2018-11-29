@@ -16,7 +16,10 @@ describe("Effect Checking", function () {
         let data = {
             user: {
                 name: 'Joe'
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -34,7 +37,11 @@ describe("Effect Checking", function () {
         let data = {
             user: {
                 name: 'Sam'
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
+
         };
 
         expect(policy.check(data)).to.equal(false);
@@ -51,7 +58,10 @@ describe("Effect Checking", function () {
         let data = {
             user: {
                 name: 'Joe'
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -68,7 +78,10 @@ describe("Effect Checking", function () {
         let data = {
             user: {
                 name: 'Sam'
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(false);
@@ -86,7 +99,11 @@ describe("Effect Checking", function () {
         let data = {
             user: {
                 name: 'Joe'
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
+
         };
 
         expect(policy.check(data)).to.equal(false);
@@ -104,7 +121,10 @@ describe("Effect Checking", function () {
         let data = {
             user: {
                 name: 'Sam'
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);

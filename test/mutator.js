@@ -17,7 +17,10 @@ describe("Mutators Checking", function () {
         let data = {
             user: {
                 str: '100'
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -34,7 +37,10 @@ describe("Mutators Checking", function () {
         let data = {
             user: {
                 str: '200'
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(false);
@@ -51,7 +57,10 @@ describe("Mutators Checking", function () {
         let data = {
             user: {
                 num: 100
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -68,7 +77,10 @@ describe("Mutators Checking", function () {
         let data = {
             user: {
                 num: 100
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(false);
@@ -88,7 +100,10 @@ describe("Mutators Checking", function () {
         let data = {
             user: {
                 name: 'Joe'
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -107,7 +122,10 @@ describe("Mutators Checking", function () {
         let data = {
             user: {
                 name: ' Joe '
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -124,7 +142,10 @@ describe("Mutators Checking", function () {
         let data = {
             user: {
                 name: 'joe'
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -141,7 +162,10 @@ describe("Mutators Checking", function () {
         let data = {
             user: {
                 name: 'JOE'
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -158,7 +182,10 @@ describe("Mutators Checking", function () {
         let data = {
             user: {
                 name: 'joe'
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -179,7 +206,10 @@ describe("Mutators Checking", function () {
         let data = {
             action: {
                 date: 'Jul 11 2018 21:48:30'
-            }
+            },
+            user: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -200,7 +230,10 @@ describe("Mutators Checking", function () {
         let data = {
             action: {
                 date: new Date('Jul 11 2018 21:48:30')
-            }
+            },
+            user: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -221,7 +254,10 @@ describe("Mutators Checking", function () {
         let data = {
             action: {
                 date: 'Jul 11 2018 21:48:30'
-            }
+            },
+            user: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(false);
@@ -239,7 +275,10 @@ describe("Mutators Checking", function () {
         let data = {
             user: {
                 role: 'admin'
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -257,7 +296,10 @@ describe("Mutators Checking", function () {
         let data = {
             user: {
                 role: 'super_user'
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(false);
@@ -275,7 +317,10 @@ describe("Mutators Checking", function () {
         let data = {
             user: {
                 location: [49.9935, 36.2304]
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -293,7 +338,10 @@ describe("Mutators Checking", function () {
         let data = {
             user: {
                 location: [49.9935, 36.2304]
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(false);
@@ -311,7 +359,10 @@ describe("Mutators Checking", function () {
         let data = {
             user: {
                 num: 100
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -330,7 +381,10 @@ describe("Mutators Checking", function () {
         let data = {
             user: {
                 num: 110
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);
@@ -349,7 +403,10 @@ describe("Mutators Checking", function () {
         let data = {
             user: {
                 num: 100
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(false);
@@ -367,7 +424,10 @@ describe("Mutators Checking", function () {
         let data = {
             user: {
                 num: 100
-            }
+            },
+            action: {},
+            env: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(false);

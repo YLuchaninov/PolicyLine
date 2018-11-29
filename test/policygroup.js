@@ -40,7 +40,9 @@ describe("Policy Group", function () {
 
         let data = {
             user: {role: 'admin', location: 'LA'},
-            env: {location: 'NY'}
+            env: {location: 'NY'},
+            action: {},
+            resource: {},
         };
 
         expect(policy.check(data)).to.equal(true);

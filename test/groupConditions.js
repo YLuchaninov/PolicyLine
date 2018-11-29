@@ -102,7 +102,9 @@ describe("Policy Group", function () {
         expect(policy.check({
             user: {
                 role: 'admin',
-            }
+            },
+            env: {},
+            action: {},
         })).to.equal(true);
 
         expect(policy.getConditions()).to.deep.equal(result);
