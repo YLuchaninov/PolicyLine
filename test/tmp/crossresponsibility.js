@@ -28,7 +28,7 @@ describe("Crooss Responsibility Checking", function () {
                 // },
                 unregisteredUser: {
                     target: [
-                        "resource.company='company_a'"
+                        "user.company='company_a'"
                     ]
                 },
             }

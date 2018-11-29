@@ -36,48 +36,6 @@ function collectResult(obj, data, property, key, resourceName) {
     return obj.adapter.proceed(targetResults);
 }
 
-function prepareForNext(obj, uniqID, _exp, propName, resourceName, callback) {
-    const operators = Operator.list, exp = JSON.parse(JSON.stringify(_exp));
-    let tempObj;
-
-    if (checkOperand(exp.left, resourceName)) {
-        obj[_property][propName][uniqID].push(exp);
-    } else if (checkOperand(exp.right, resourceName)) {
-        tempObj = exp.right;
-        exp.right = exp.left;
-        exp.left = tempObj;
-        if (operators[exp.operator].reverse) {
-            exp.operator = operators[exp.operator].reverse;
-        }
-
-        obj[_property][propName][uniqID].push(exp);
-    } else if (callback) {
-        callback(exp);
-    }
-}
-
-function policyConstructor(jsonPolicy) {
-    let uniqID = Math.random().toString(36).substr(2, 9);
-    this[_property] = {
-        expression: [wrapToToken(uniqID)],
-        target: {[uniqID]: []},
-        condition: {[uniqID]: []},
-        watcher: {[uniqID]: []},
-    };
-
-    jsonPolicy.target
-        .map(expStr => parseExp(expStr))
-        .forEach((_exp) => {
-            // collect watchers
-            prepareForNext(this, uniqID, _exp, WATCHER, USER);
-
-            // collect conditions, if it is not a condition, paste it to target array
-            prepareForNext(this, uniqID, _exp, CONDITION, RESOURCE, (exp) => {
-                this[_property].target[uniqID].push(exp);
-            });
-        });
-}
-
 function aggregateResult(policy, type, data) {
     const rules = {}, resource = type === CONDITION ? RESOURCE : USER;
 
@@ -114,6 +72,18 @@ function dependencyGuard(obj) {
     return flag;
 }
 
+function policyConstructor(policy) {
+    let key = Math.random().toString(36).substr(2, 9);
+    this[_property] = {
+        expression: [wrapToToken(key)],
+        target: {[key]: []},
+        condition: {[key]: []},
+        watcher: {[key]: []},
+    };
+
+    policyParse(policy, key, this);
+}
+
 function groupConstructor(jsonPolicy) {
     this[_property] = {
         expression: infixToRPN(createTokens(jsonPolicy.expression)),
@@ -128,18 +98,42 @@ function groupConstructor(jsonPolicy) {
         this[_property].condition[key] = [];
         this[_property].watcher[key] = [];
 
-        policy.target
-            .map(expStr => parseExp(expStr))
-            .forEach((_exp) => {
-                // collect watchers
-                prepareForNext(this, key, _exp, WATCHER, USER);
-
-                // collect conditions, if it is not a condition, paste it to target array
-                prepareForNext(this, key, _exp, CONDITION, RESOURCE, (exp) => {
-                    this[_property].target[key].push(exp);
-                });
-            });
+        policyParse(policy, key, this);
     });
+}
+
+function prepareFor(propName, key, context, _exp) {
+    const operators = Operator.list;
+    const exp = JSON.parse(JSON.stringify(_exp));
+    const resourceName = propName === WATCHER ? USER : RESOURCE;
+
+    /*
+        We have a restriction; we cannot have a prepared property on both sides of the expression.
+        This contradicts the logic of computation - it makes no sense to compare
+        two different attributes of the same object.
+     */
+    if (checkOperand(exp.left, resourceName)) { // fill if expression in left side
+        context[_property][propName][key].push(exp);
+    } else if (checkOperand(exp.right, resourceName)) { // turn over expression
+        let tempObj = exp.right;
+        exp.right = exp.left;
+        exp.left = tempObj;
+        if (operators[exp.operator].reverse) {
+            exp.operator = operators[exp.operator].reverse;
+        }
+
+        context[_property][propName][key].push(exp);
+    }
+}
+
+function policyParse(policy, key, context) {
+  policy.target
+        .map(expStr => parseExp(expStr))
+        .forEach((_exp) => {
+            // prepareFor(WATCHER, key, context, _exp);
+            // prepareFor(CONDITION, key, context, _exp);
+            context[_property].target[key].push(_exp);
+        });
 }
 
 class Policy {
@@ -157,6 +151,11 @@ class Policy {
     }
 
     check(data = {}) {
+        Object.keys(this[_property].target).forEach((key) => {
+            this[_property].condition[key] = [];
+            this[_property].watcher[key] = [];
+        });
+
         const resultCollection = {};
 
         Object.keys(this[_property].target).forEach((policyKey) => {
@@ -164,6 +163,7 @@ class Policy {
 
             resultCollection[policyKey] = true;
 
+            // calculate separate rules for one policy
             this[_property].target[policyKey].forEach((targetExp) => {
                 // generate unique random key
                 const key = Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
@@ -171,17 +171,22 @@ class Policy {
 
                 if (typeof tmp === BOOL) {
                     targetResults[key] = tmp;
+                } else if (typeof tmp === 'object' && tmp.flag) {
+                  prepareFor(WATCHER, policyKey, this, targetExp);
+                  prepareFor(CONDITION, policyKey, this, targetExp);
                 } else {
                     Object.assign(targetResults, tmp);
                 }
             });
 
-            // calculate final result
+            // calculate final result for single policy
             Object.values(targetResults).forEach((value) => {
+                console.log(targetResults, value)
                 resultCollection[policyKey] = resultCollection[policyKey] && value;
             });
         });
 
+        /* fill data for future using */
         this[_calcResult] = evaluateRPN(fillTokens(this[_property].expression, resultCollection));
 
         // apply effect to bool result
@@ -189,6 +194,7 @@ class Policy {
 
         // save data for next `getConditions` methods
         this[_property].lastData = result ? data : undefined;
+        /**/
 
         return result;
     }

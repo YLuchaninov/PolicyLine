@@ -462,23 +462,6 @@ describe("Operators Checking", function () {
         });
     });
 
-    it(": custom global operator - unregister", function () {
-        let rules = {
-            target: [
-                'user.role#="developer"'
-            ]
-        };
-
-        let policy = new Policy(rules);
-        let data = {
-            user: {
-                role: 'developer'
-            }
-        };
-
-        expect(policy.check(data)).to.equal(false);
-    });
-
     it(": custom namespace operator", function () {
         register({
             name: '=',
