@@ -209,12 +209,7 @@ describe("Watchers Checking", function () {
 
     let policy = new Policy(policyGroup);
     expect(policy.check(data)).to.equal(true);
-    let watchers = policy.getConditions({
-      user: {
-        role: 'admin',
-        company: 'companyA'
-      },
-    });
+    let watchers = policy.getConditions();
 
     let result = {
       "$or": [
@@ -269,9 +264,22 @@ describe("Watchers Checking", function () {
       env: {}
     })).to.equal(true);
     let watchers = policy.getConditions();
-    let result = {
-      role: 'super_admin'
-    };
+      let result = {
+        "$or": [
+          {
+            "location": undefined,
+            "role": "user",
+          },
+          {
+            "company": undefined,
+            "role": "admin",
+          },
+          {
+            "role": "super_admin"
+          },
+        ],
+      }
+  ;
     expect(watchers).to.deep.equal(result);
   });
 

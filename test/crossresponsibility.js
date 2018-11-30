@@ -6,29 +6,29 @@ let Policy = PolicyLine.Policy;
 describe("Crooss Responsibility Checking", function () {
   it("test", function () {
     let policyGroup = { // all algorithms set in 'all' by default
-      expression: 'unregisteredUser',//'admin OR superAdmin OR user OR unregisteredUser',
+      expression: 'admin OR superAdmin OR user OR unregisteredUser',//'admin OR superAdmin OR user OR unregisteredUser',
       policies: {
-        // admin: {
-        //     target: [
-        //         "user.role='admin'",
-        //         "resource.company=user.company",
-        //     ]
-        // },
-        // superAdmin: {
-        //     target: [
-        //         "user.role='superAdmin'"
-        //     ]
-        // },
-        // user: {
-        //     target: [
-        //         "user.role='user'",
-        //         "user.company~=[\"company_a\",\"company_b\"]",
-        //         "user.company=resource.company"
-        //     ]
-        // },
+        admin: {
+            target: [
+                "user.role='admin'",
+                "resource.company=user.company",
+            ]
+        },
+        superAdmin: {
+            target: [
+                "user.role='superAdmin'"
+            ]
+        },
+        user: {
+            target: [
+                "user.role='user'",
+                "user.company~=[\"company_a\",\"company_b\"]",
+                "user.company=resource.company"
+            ]
+        },
         unregisteredUser: {
           target: [
-            "user.company='company_a'"
+            "resource.company='company_a'"
           ]
         },
       }
@@ -49,13 +49,31 @@ describe("Crooss Responsibility Checking", function () {
       action: {},
       env: {}
     };
-    console.log(policy.check(data)) // todo should be false
-    //const watchers = policy.getConditions(data);
-    //console.log(JSON.stringify(watchers, null, 2));
-    // let result = {
-    //     role: 'super_admin'
-    // };
-    // expect(watchers).to.deep.equal(result);
+
+    expect(policy.check(data)).to.equal(true);
+    const watchers = policy.getConditions();
+    console.log(watchers);
+
+    let result = {
+      '$or':
+        [
+          {
+            '$or':
+              [
+                { role: 'superAdmin' },
+                { role: 'admin', company: 'company_b' },
+              ]
+          },
+          {
+            role: 'user',
+            company: {
+              '$in': ['company_a', 'company_b'],
+              '$eq': 'company_b'
+            }
+          }
+        ]
+    };
+    expect(watchers).to.deep.equal(result);
   });
 
 });

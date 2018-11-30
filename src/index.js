@@ -144,7 +144,12 @@ function attributeCheck(obj) {
 
 class Policy {
 
+  toString() {
+    return this.rules;
+  }
+
   constructor(jsonPolicy) {
+    this.rules = JSON.stringify(jsonPolicy, null, 2);
     this.adapter = Adapter.MongoJSONb;
 
     if (jsonPolicy.hasOwnProperty('target')) {
@@ -152,6 +157,7 @@ class Policy {
     } else {
       groupConstructor.call(this, jsonPolicy);
     }
+
     this[_property].effect = jsonPolicy.effect !== DENY;
     this[_property].lastData = null;
   }
@@ -226,13 +232,18 @@ class Policy {
 
     const rules = aggregateResult(this, this[_property].filterType, this[_property].lastData);
 
-    const result = {};
-    Object.entries(rules).forEach((item) => {
-
-      if (this[_calcResult].val.includes(item[0])) {
-        mergeDeep(result, item[1]);
-      }
-    });
+    let result;
+    if (this[_property].filterType === WATCHER) {
+        result = processRPN(fillTokens(this[_property].expression, rules), this.adapter);
+        result = result ? this.adapter.optimize(result.res) : undefined;
+    } else {
+        result = {};
+        Object.entries(rules).forEach((item) => {
+            if (this[_calcResult].val.includes(item[0])) {
+                mergeDeep(result, item[1]);
+            }
+        });
+    }
 
     return mergeDeep(result, mixin);
   }

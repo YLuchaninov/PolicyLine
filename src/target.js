@@ -38,7 +38,7 @@ function parseOperand(operandStr) {
   try {
     value = isDIObj ? array[0] : JSON.parse(unwrapString(array[0]));
   } catch (e) {
-    const msg = `Parsing Error: \n\t unknown object - ${array[0]} in expression`;
+    const msg = `Parsing Error: \n\t JSON.parse( ${array[0]} ) in expression`;
     throw new Error(msg);
   }
 
