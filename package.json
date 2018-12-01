@@ -1,6 +1,6 @@
 {
   "name": "policyline",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Attributes Based Access Control library for Node.JS",
   "main": "dist/policyline.min.js",
   "scripts": {
@@ -59,7 +59,5 @@
     "webpack": "~4.15.1",
     "webpack-command": "~0.4.1"
   },
-  "dependencies": {
-    "moment": "~2.20.1"
-  }
+  "dependencies": {}
 }
