@@ -1,5 +1,8 @@
 function optimize(exp) {
-  if (typeof  exp === 'object')
+  let flag;
+  do {
+    flag = false;
+
     Object.keys(exp).forEach((key) => {
       if (key === '$or') {
         for (let i = exp[key].length - 1; i >= 0; i--) {
@@ -9,12 +12,15 @@ function optimize(exp) {
               exp[key].push(obj['$or'][j])
             }
             exp[key].splice(i, 1);
+            flag = true;
           }
         }
       } else if (typeof exp[key] === 'object') {
         exp[key] = optimize(exp[key]);
       }
     });
+  } while (flag);
+
   return exp;
 }
 

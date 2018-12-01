@@ -170,5 +170,6 @@ export {
   infixToRPN,
   fillTokens,
   evaluateRPN,
-  wrapToToken
+  wrapToToken,
+  TYPE,
 }

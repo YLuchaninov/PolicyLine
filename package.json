@@ -1,6 +1,6 @@
 {
   "name": "policyline",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "Attributes Based Access Control library for Node.JS",
   "main": "dist/policyline.min.js",
   "scripts": {

@@ -7,7 +7,8 @@ import {
   infixToRPN,
   fillTokens,
   evaluateRPN,
-  wrapToToken
+  wrapToToken,
+  TYPE
 } from './expression';
 import {mergeDeep} from "./utils";
 
@@ -210,7 +211,9 @@ class Policy {
     });
 
     /* fill data for future using */
-    this[_calcResult] = evaluateRPN(fillTokens(this[_property].expression, resultCollection));
+    let tokens = fillTokens(this[_property].expression, resultCollection);
+    this[_property].tokens = JSON.parse(JSON.stringify(tokens));
+    this[_calcResult] = evaluateRPN(tokens);
 
     // apply effect to bool result
     const result = this[_property].effect ? this[_calcResult].res : !this[_calcResult].res;
@@ -234,15 +237,22 @@ class Policy {
 
     let result;
     if (this[_property].filterType === WATCHER) {
-        result = processRPN(fillTokens(this[_property].expression, rules), this.adapter);
-        result = result ? this.adapter.optimize(result.res) : undefined;
+      // apply results of `check` method
+      this[_property].tokens.forEach((token) => {
+        if (token.type === TYPE.val && token.res === false) {
+          rules[token.val[0]] = undefined;
+        }
+      });
+
+      result = processRPN(fillTokens(this[_property].expression, rules), this.adapter);
+      result = result ? this.adapter.optimize(result.res) : undefined;
     } else {
-        result = {};
-        Object.entries(rules).forEach((item) => {
-            if (this[_calcResult].val.includes(item[0])) {
-                mergeDeep(result, item[1]);
-            }
-        });
+      result = {};
+      Object.entries(rules).forEach((item) => {
+        if (this[_calcResult].val.includes(item[0])) {
+          mergeDeep(result, item[1]);
+        }
+      });
     }
 
     return mergeDeep(result, mixin);
