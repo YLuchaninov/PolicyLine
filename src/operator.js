@@ -14,61 +14,49 @@ let operators = {
     reverse: '>='
   },
   '~=': {
-    '*': (a, b) => { // contains in array
-      if (!Array.isArray(b)) return false;
-      return b.includes(a);
-    },
+    // contains in array
+    '*': (a, b) => Array.isArray(b) && b.includes(a),
     reverse: '~!'
   },
   '~!': {
-    '*': (b, a) => { // contains in array
-      if (!Array.isArray(b)) return false;
-      return b.includes(a);
-    },
+    // contains in array
+    '*': (b, a) => Array.isArray(b) && b.includes(a),
     reverse: '~='
   },
   '^=': {
-    '*': (a, b) => { // not contains in array
-      if (!Array.isArray(b)) return false;
-      return !(b.includes(a));
-    },
+    // not contains in array
+    '*': (a, b) => Array.isArray(b) && !b.includes(a),
     reverse: '^!'
   },
   '^!': {
-    '*': (b, a) => { // not contains in array
-      if (!Array.isArray(b)) return false;
-      return !(b.includes(a));
-    },
+    // not contains in array
+    '*': (b, a) => Array.isArray(b) && !b.includes(a),
     reverse: '^='
   },
   '?=': {
-    '*': (a, b) => { // attribute is absent or equivalent
-      if (!a) return true;
-      return a === b;
-    },
+    // attribute is absent or equivalent
+    '*': (a, b) => !a || a === b,
     reverse: '?!'
   },
   '?!': {
-    '*': (b, a) => { // attribute is absent or equivalent
-      if (!a) return true;
-      return a === b;
-    },
+    // attribute is absent or equivalent
+    '*': (b, a) => !a || a === b,
     reverse: '?='
   },
   '=': {
-    '*': (a, b) => (a === b)
+    '*': (a, b) => a === b
   },
   '>': {
-    '*': (a, b) => (a > b),
+    '*': (a, b) => a > b,
     reverse: '<'
   },
   '<': {
-    '*': (a, b) => (a < b),
+    '*': (a, b) => a < b,
     reverse: '>'
   }
 };
 
-function register({name, namespace, implement, reverse}) {
+const register = ({name, namespace, implement, reverse}) => {
   operators[name] = operators[name] || {};
   operators[name][namespace] = implement;
   if (namespace === '*' && reverse) {
@@ -88,27 +76,25 @@ function register({name, namespace, implement, reverse}) {
 
       return 0;
     })
-    .forEach(function (data) {
+    .forEach(data => {
       obj[data[0]] = data[1]
     });
   operators = obj;
-}
+};
 
-function unregister({name, namespace}) {
+const unregister = ({name, namespace}) => {
   let container = operators[name];
   delete container[namespace];
 
   if (Object.keys(container).length === 0) {
     delete operators[name];
   }
-}
+};
 
-const Operator = {
+export default {
   register,
   unregister,
   get list() {
     return operators;
   }
 };
-
-export default Operator;

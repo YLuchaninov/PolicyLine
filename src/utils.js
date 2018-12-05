@@ -1,11 +1,11 @@
-function isObject(item) {
+const isObject = item => {
   return (item
     && typeof item === 'object'
     && !Array.isArray(item)
     && !(item instanceof RegExp));
-}
+};
 
-function mergeDeep(target, source) {
+const mergeDeep = (target, source) => {
   if (isObject(target) && isObject(source)) {
     for (const key in source) {
       if (isObject(source[key])) {
@@ -19,8 +19,6 @@ function mergeDeep(target, source) {
     }
   }
   return target || source;
-}
+};
 
-export {
-  mergeDeep
-}
+export { mergeDeep }
