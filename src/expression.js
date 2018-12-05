@@ -5,19 +5,14 @@ const TYPE = {
   val: 'VAL'
 };
 
-function wrapToToken(item) {
-  return {
-    val: item,
-    type: operators.includes(item) ? TYPE.op : TYPE.val
-  }
-}
+const wrapToToken = item => ({
+  val: item,
+  type: operators.includes(item) ? TYPE.op : TYPE.val
+});
 
-function createTokens(expression) {
-  const array = expression.split(/\s+|(?=\(|\))|\b/);
-  return array.map(wrapToToken);
-}
+const createTokens = expression => expression.split(/\s+|(?=\(|\))|\b/).map(wrapToToken);
 
-function infixToRPN(tokens) {
+const infixToRPN = tokens => {
   const queue = [];
   const stack = [];
   const precedence = {
@@ -56,27 +51,25 @@ function infixToRPN(tokens) {
   }
 
   return queue;
-}
+};
 
-function fillTokens(tokens, data) {
-  const result = [];
-  tokens.forEach((item) => {
-    let obj = {
-      type: item.type,
-      res: item.res,
-      val: item.val
+const fillTokens = (tokens, data) => {
+  return tokens.reduce((prev, next) => {
+    const obj = {
+      type: next.type,
+      res: next.res,
+      val: next.val
     };
-    if (item.type === TYPE.val) {
-      obj.res = data[item.val];
-      obj.val = [item.val];
+    if (next.type === TYPE.val) {
+      obj.res = data[next.val];
+      obj.val = [next.val];
     }
-    result.push(obj);
-  });
+    prev.push(obj);
+    return prev;
+  }, []);
+};
 
-  return result;
-}
-
-function evaluateRPN(tokens) {
+const evaluateRPN = tokens => {
   const stack = [];
   let val;
 
@@ -117,10 +110,10 @@ function evaluateRPN(tokens) {
   }
 
   return stack.pop();
-}
+};
 
 
-function processRPN(tokens, adapter) {
+const processRPN = (tokens, adapter) => {
   const stack = [];
 
   while (tokens.length) {
@@ -162,7 +155,7 @@ function processRPN(tokens, adapter) {
   }
 
   return stack.pop();
-}
+};
 
 export {
   processRPN,
@@ -171,5 +164,5 @@ export {
   fillTokens,
   evaluateRPN,
   wrapToToken,
-  TYPE,
+  TYPE
 }

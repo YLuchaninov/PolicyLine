@@ -23,11 +23,11 @@ const WATCHER = 'watcher';
 const BOOL = 'boolean';
 const DENY = 'deny';
 
-function checkOperand(oper, objStr) {
+const checkOperand = (oper, objStr) => {
   return oper.isDIObj && oper.value.indexOf && oper.value.indexOf(objStr) === 0;
-}
+};
 
-function collectResult(obj, data, key, resourceName) {
+const collectResult = (obj, data, key, resourceName) => {
   const context = {}, targetResults = [];
 
   obj[_property].filterTarget[key].forEach((expr) => {
@@ -35,10 +35,11 @@ function collectResult(obj, data, key, resourceName) {
   });
 
   return obj.adapter.proceed(targetResults);
-}
+};
 
-function aggregateResult(policy, type, data) {
-  const rules = {}, resource = type === CONDITION ? RESOURCE : USER;
+const aggregateResult = (policy, type, data) => {
+  const rules = {},
+        resource = type === CONDITION ? RESOURCE : USER;
   Object.keys(policy[_property].filterTarget).forEach((key) => {
     try {
       rules[key] = collectResult(policy, data, key, resource);
@@ -51,9 +52,9 @@ function aggregateResult(policy, type, data) {
   });
 
   return rules;
-}
+};
 
-function dependencyGuard(obj) {
+const dependencyGuard = obj  => {
   let flag = false;
   Object.keys(obj).forEach((key) => {
     if (typeof obj[key] === 'string' && (
@@ -69,9 +70,9 @@ function dependencyGuard(obj) {
   });
 
   return flag;
-}
+};
 
-function policyConstructor(policy) {
+const policyConstructor = function policyConstructor(policy) {
   let key = Math.random().toString(36).substr(2, 9);
   this[_property] = {
     expression: [wrapToToken(key)],
@@ -80,9 +81,9 @@ function policyConstructor(policy) {
   };
 
   policyParse(policy, key, this);
-}
+};
 
-function groupConstructor(jsonPolicy) {
+const groupConstructor = function groupConstructor(jsonPolicy) {
   this[_property] = {
     expression: infixToRPN(createTokens(jsonPolicy.expression)),
     target: {},
@@ -96,9 +97,9 @@ function groupConstructor(jsonPolicy) {
 
     policyParse(policy, key, this);
   });
-}
+};
 
-function prepareFor(propName, key, context, _exp) {
+const prepareFor = (propName, key, context, _exp) => {
   const operators = Operator.list;
   const exp = JSON.parse(JSON.stringify(_exp));
   const resourceName = propName === WATCHER ? USER : RESOURCE;
@@ -120,17 +121,17 @@ function prepareFor(propName, key, context, _exp) {
 
     context[_property].filterTarget[key].push(exp);
   }
-}
+};
 
-function policyParse(policy, key, context) {
+const policyParse = (policy, key, context) => {
   policy.target
     .map(expStr => parseExp(expStr))
     .forEach((_exp) => {
       context[_property].target[key].push(_exp);
     });
-}
+};
 
-function attributeCheck(obj) {
+const attributeCheck = obj => {
   const attrs = ['user', 'resource', 'action', 'env'];
   if (typeof obj === 'object') {
     Object.keys(obj).forEach((attr) => {
@@ -141,7 +142,7 @@ function attributeCheck(obj) {
     });
   }
   return attrs;
-}
+};
 
 class Policy {
 
@@ -211,7 +212,7 @@ class Policy {
     });
 
     /* fill data for future using */
-    let tokens = fillTokens(this[_property].expression, resultCollection);
+    const tokens = fillTokens(this[_property].expression, resultCollection);
     this[_property].tokens = JSON.parse(JSON.stringify(tokens));
     this[_calcResult] = evaluateRPN(tokens);
 
@@ -248,7 +249,7 @@ class Policy {
       result = result ? this.adapter.optimize(result.res) : undefined;
     } else {
       result = {};
-      Object.entries(rules).forEach((item) => {
+      Object.entries(rules).forEach(item => {
         if (this[_calcResult].val.includes(item[0])) {
           mergeDeep(result, item[1]);
         }

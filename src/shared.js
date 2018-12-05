@@ -1,6 +1,6 @@
 import Mutator from "./mutator";
 
-function unwrapNamespace(data, namespace) {
+const unwrapNamespace = (data, namespace) => {
   const path = namespace.split('.');
   let result = data;
   for (let part of path) {
@@ -12,9 +12,9 @@ function unwrapNamespace(data, namespace) {
     }
   }
   return result;
-}
+};
 
-function extract(data, operand, context) {
+const extract = (data, operand, context) => {
   let value = operand.value;
   if (operand.isDIObj) {
     value = unwrapNamespace(data, value)
@@ -36,9 +36,9 @@ function extract(data, operand, context) {
   });
 
   return value;
-}
+};
 
-function prepareCollection(inputData, exp, context, resourceName) {
+const prepareCollection = (inputData, exp, context, resourceName) => {
   const leftOperand = extract(inputData, exp.left, context, null);
   const rightOperand = extract(inputData, exp.right, context, null);
   let resource = leftOperand === null ? exp.left.value : leftOperand;
@@ -49,7 +49,7 @@ function prepareCollection(inputData, exp, context, resourceName) {
     operator: exp.operator,
     mutators: exp.left.mutators
   };
-}
+};
 
 export {
   extract,

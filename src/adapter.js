@@ -26,13 +26,13 @@ function optimize(exp) {
 
 const MongoJSONb = {
 
-  and: (a, b) => (Object.assign(a, b)),
+  and: Object.assign.bind(Object),
 
   or: (a, b) => ({
     '$or': [a, b]
   }),
 
-  optimize: optimize,
+  optimize,
 
   proceed: rules => {
     const OperatorMap = {
@@ -48,10 +48,11 @@ const MongoJSONb = {
     };
 
     const MutatorMap = {
-      'or': (rule, result, context) => {
-        result[rule.attribute] = result[rule.attribute] || {
-          '$or': []
-        };
+      'or': (rule, result) => {
+        if (!result[rule.attribute]) {
+          result[rule.attribute] = { '$or': [] }
+        }
+
         result[rule.attribute]['$or'].push(rule.value);
       },
       'radius': (rule, result, context) => {
@@ -71,18 +72,21 @@ const MongoJSONb = {
     };
 
     // adapter logic
-    const result = {}, context = {};
+    const result = {},
+          context = {};
     let attribute;
 
-    rules.forEach((rule) => {
+    rules.forEach(rule => {
       attribute = rule.attribute;
 
       if (rule.mutators.length) {
         // apply mutators
         rule.mutators.forEach((mutator) => {
           if (MutatorMap[mutator]) {
-            context[rule.attribute] = context[rule.attribute] || {};
-            MutatorMap[mutator](rule, result, context[rule.attribute]);
+            if (!context[attribute]) {
+              context[attribute] = {};
+            }
+            MutatorMap[mutator](rule, result, context[attribute]);
           }
         });
       } else {
@@ -105,8 +109,4 @@ const MongoJSONb = {
   }
 };
 
-const Adapter = {
-  MongoJSONb: MongoJSONb,
-};
-
-export default Adapter;
+export default { MongoJSONb };
